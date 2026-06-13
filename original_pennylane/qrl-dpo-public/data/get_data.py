@@ -5,22 +5,18 @@ import yfinance as yf
 from config import tickers, start_date, end_date
 from utilities.data_processing import log_difference_dataframe
 
-import requests
 
 
 def main():
 
     # Create a session
-    session = requests.Session()
-
     # Fetch yfinance
     data = yf.download(
         tickers,
         start=start_date,
         end=end_date,
         auto_adjust=False,
-        session=session,
-    )
+)
 
     # Select data
     price_data = data['Adj Close']

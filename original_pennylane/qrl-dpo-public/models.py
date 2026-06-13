@@ -12,14 +12,12 @@ Classes:
 '''
 from naive_baseline import EqualWeights
 from mvo.mvo_functions import MeanVarianceOptimization
-from actor_critic.actor_critic_functions import DeepActorCritic
 from ddpg.ddpg_functions import DDPG
 from q_learning.q_learning_functions import DeepQLearning
 
 __all__ = [
     'EqualWeights',
     'MeanVarianceOptimization',
-    'DeepActorCritic',
     'DDPG',
     'DeepQLearning',
 ]
