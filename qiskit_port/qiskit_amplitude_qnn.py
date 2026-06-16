@@ -29,6 +29,8 @@ class QiskitAmplitudeQNN(nn.Module):
         rotation_axes: str = "y",
         entanglement: str = "reverse_linear",
         output_map: tuple | None = None,
+        output_activation=None,
+        input_transformation=None,
         seed: int = 68,
         **kwargs,
     ):
@@ -50,6 +52,8 @@ class QiskitAmplitudeQNN(nn.Module):
         self.encoding = encoding
         self.rotation_axes = rotation_axes
         self.output_map = output_map
+        self.output_activation = output_activation
+        self.input_transformation = input_transformation
 
         if num_qubits is None:
             self.num_qubits = max(
@@ -149,14 +153,20 @@ class QiskitAmplitudeQNN(nn.Module):
         return padded / norm
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x.float()
-        x = self._pad_and_normalize(x)
+            x = x.float()
 
-        quantum_output = self.qlayer(x)
-        final_output = self.output_layer(quantum_output)
+            if self.input_transformation is not None:
+                x = self.input_transformation(x)
 
-        return final_output
+            x = self._pad_and_normalize(x)
 
+            quantum_output = self.qlayer(x)
+            final_output = self.output_layer(quantum_output)
+
+            if self.output_activation is not None:
+                final_output = self.output_activation(final_output)
+
+            return final_output
 
 if __name__ == "__main__":
     model = QiskitAmplitudeQNN(
