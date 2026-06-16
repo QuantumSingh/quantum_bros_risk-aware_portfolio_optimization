@@ -13,46 +13,43 @@ from qiskit_machine_learning.connectors import TorchConnector
 
 
 def z_observable(num_qubits: int, qubit: int) -> SparsePauliOp:
-    """
-    Create a Pauli-Z observable on a selected qubit.
-    """
     pauli = ["I"] * num_qubits
     pauli[num_qubits - 1 - qubit] = "Z"
     return SparsePauliOp.from_list([("".join(pauli), 1.0)])
 
 
 class QiskitAmplitudeQNN(nn.Module):
-    """
-    Qiskit prototype of the paper's PennyLane QuantumNeuralNetwork
-    when encoding='amplitude'.
-
-    It does:
-
-        classical input vector
-            -> amplitude encoding
-            -> trainable RY variational circuit
-            -> Pauli-Z expectation values
-            -> torch output tensor
-    """
-
     def __init__(
         self,
         input_size: int,
         output_size: int,
-        num_weights: int = 60,
         num_qubits: int | None = None,
+        num_weights: int | None = 60,
+        encoding: str = "amplitude",
+        rotation_axes: str = "y",
         entanglement: str = "reverse_linear",
+        output_map: tuple | None = None,
         seed: int = 68,
+        **kwargs,
     ):
         super().__init__()
 
         torch.manual_seed(seed)
         np.random.seed(seed)
 
+        if encoding != "amplitude":
+            raise ValueError("Only encoding='amplitude' is supported.")
+
+        if rotation_axes != "y":
+            raise ValueError("Only rotation_axes='y' is supported.")
+
         self.input_size = input_size
         self.output_size = output_size
         self.num_weights = num_weights
         self.entanglement = entanglement
+        self.encoding = encoding
+        self.rotation_axes = rotation_axes
+        self.output_map = output_map
 
         if num_qubits is None:
             self.num_qubits = max(
@@ -72,12 +69,11 @@ class QiskitAmplitudeQNN(nn.Module):
 
         self.feature_map = RawFeatureVector(feature_dimension=self.feature_dim)
         self.theta = ParameterVector("theta", self.num_weights)
-
         self.circuit = self._build_circuit()
 
         observables = [
             z_observable(self.num_qubits, q)
-            for q in range(self.output_size)
+            for q in range(self.num_qubits)
         ]
 
         self.qnn = EstimatorQNN(
@@ -91,12 +87,12 @@ class QiskitAmplitudeQNN(nn.Module):
 
         self.qlayer = TorchConnector(self.qnn)
 
-    def _add_entanglement(self, qc: QuantumCircuit) -> None:
-        """
-        Add entanglement gates.
+        if self.num_qubits != self.output_size:
+            self.output_layer = nn.Linear(self.num_qubits, self.output_size)
+        else:
+            self.output_layer = nn.Identity()
 
-        reverse_linear roughly mirrors the original PennyLane default.
-        """
+    def _add_entanglement(self, qc: QuantumCircuit) -> None:
         if self.entanglement == "linear":
             for q in range(self.num_qubits - 1):
                 qc.cx(q, q + 1)
@@ -115,11 +111,7 @@ class QiskitAmplitudeQNN(nn.Module):
             raise ValueError(f"Unknown entanglement type: {self.entanglement}")
 
     def _build_circuit(self) -> QuantumCircuit:
-        """
-        Build the amplitude-encoded Qiskit circuit.
-        """
         qc = QuantumCircuit(self.num_qubits)
-
         qc.compose(self.feature_map, inplace=True)
 
         for i, param in enumerate(self.theta):
@@ -132,11 +124,6 @@ class QiskitAmplitudeQNN(nn.Module):
         return qc
 
     def _pad_and_normalize(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Amplitude encoding needs a vector of length 2^num_qubits.
-        If the input is shorter, pad with zeros.
-        Then normalize to unit length.
-        """
         if x.ndim == 1:
             x = x.unsqueeze(0)
 
@@ -164,7 +151,11 @@ class QiskitAmplitudeQNN(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.float()
         x = self._pad_and_normalize(x)
-        return self.qlayer(x)
+
+        quantum_output = self.qlayer(x)
+        final_output = self.output_layer(quantum_output)
+
+        return final_output
 
 
 if __name__ == "__main__":
@@ -172,6 +163,8 @@ if __name__ == "__main__":
         input_size=10,
         output_size=4,
         num_weights=60,
+        encoding="amplitude",
+        rotation_axes="y",
         seed=68,
     )
 
