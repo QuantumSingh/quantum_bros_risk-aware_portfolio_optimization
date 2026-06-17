@@ -25,14 +25,9 @@ os.chdir(ORIGINAL_CODE)
 
 from ddpg.ddpg_functions import DDPG
 from qiskit_port.qiskit_trainable_qnn import QiskitTrainableQNN
+from predictors.input_transformations import radial_to_linear
 import utilities.metrics as metrics_module
 
-# Try to import the same transformation used by the original QDPG block.
-# If this import fails, we will temporarily use None and fix the import path.
-try:
-    from predictors.quantum_neural_network import radial_to_linear
-except ImportError:
-    radial_to_linear = None
 
 
 def main():
