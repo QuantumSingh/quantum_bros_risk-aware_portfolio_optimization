@@ -42,13 +42,27 @@ class _QiskitAmplitudeParameterShift(torch.autograd.Function):
         inputs, weights = ctx.saved_tensors
         module = ctx.module
 
+        original_inputs_shape = tuple(inputs.shape)
+
         inputs_np = inputs.detach().cpu().numpy()
         weights_np = weights.detach().cpu().numpy()
         grad_output_np = grad_output.detach().cpu().numpy()
 
+        # DDPG sometimes calls the QNN with a single state vector [input_dim]
+        # and sometimes with a batch [batch_size, input_dim].
+        # Use 2D arrays internally, then reshape gradients back.
+        if inputs_np.ndim == 1:
+            inputs_np = inputs_np.reshape(1, -1)
+
+        if grad_output_np.ndim == 1:
+            grad_output_np = grad_output_np.reshape(1, -1)
+
         num_weights = len(weights_np)
         grad_weights = np.zeros_like(weights_np, dtype=np.float64)
 
+        # ------------------------------------------------------------
+        # 1. Weight gradients using exact parameter-shift.
+        # ------------------------------------------------------------
         shift = np.pi / 2.0
 
         for k in range(num_weights):
@@ -61,10 +75,39 @@ class _QiskitAmplitudeParameterShift(torch.autograd.Function):
             out_plus = module._forward_numpy(inputs_np, weights_plus)
             out_minus = module._forward_numpy(inputs_np, weights_minus)
 
-            # Exact parameter-shift rule for RX/RY/RZ gates.
             jac_k = 0.5 * (out_plus - out_minus)
-
             grad_weights[k] = np.sum(grad_output_np * jac_k)
+
+        # ------------------------------------------------------------
+        # 2. Input gradients using central finite difference.
+        # This is needed for DDPG actor learning through the critic.
+        # ------------------------------------------------------------
+        grad_inputs = np.zeros_like(inputs_np, dtype=np.float64)
+        eps = 1e-4
+
+        batch_size, input_dim = inputs_np.shape
+
+        for b in range(batch_size):
+            for j in range(input_dim):
+                inputs_plus = inputs_np.copy()
+                inputs_minus = inputs_np.copy()
+
+                inputs_plus[b, j] += eps
+                inputs_minus[b, j] -= eps
+
+                out_plus = module._forward_numpy(inputs_plus, weights_np)[b]
+                out_minus = module._forward_numpy(inputs_minus, weights_np)[b]
+
+                jac_bj = (out_plus - out_minus) / (2.0 * eps)
+                grad_inputs[b, j] = np.sum(grad_output_np[b] * jac_bj)
+
+        grad_inputs = grad_inputs.reshape(original_inputs_shape)
+
+        grad_inputs_torch = torch.tensor(
+            grad_inputs,
+            dtype=inputs.dtype,
+            device=inputs.device,
+        )
 
         grad_weights_torch = torch.tensor(
             grad_weights,
@@ -72,8 +115,7 @@ class _QiskitAmplitudeParameterShift(torch.autograd.Function):
             device=weights.device,
         )
 
-        # No input gradient yet. We add this later only if DDPG critic needs it.
-        return None, grad_weights_torch, None
+        return grad_inputs_torch, grad_weights_torch, None
 
 
 class QiskitExactAmplitudeFiniteDiffQNN(nn.Module):
@@ -175,7 +217,7 @@ class QiskitExactAmplitudeFiniteDiffQNN(nn.Module):
         self.weights = nn.Parameter(
             torch.empty(self.num_weights, dtype=torch.float32)
         )
-        nn.init.uniform_(self.weights, -0.1, 0.1)
+        nn.init.uniform_(self.weights, 0.0, 2.0 * np.pi)
 
         if self.classical_layers:
             self.output_layer = nn.Linear(
