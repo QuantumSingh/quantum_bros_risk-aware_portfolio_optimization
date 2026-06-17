@@ -25,6 +25,7 @@ os.chdir(ORIGINAL_CODE)
 
 from ddpg.ddpg_functions import DDPG
 from qiskit_port.qiskit_trainable_qnn import QiskitTrainableQNN
+import utilities.metrics as metrics_module
 
 # Try to import the same transformation used by the original QDPG block.
 # If this import fails, we will temporarily use None and fix the import path.
@@ -62,6 +63,8 @@ def main():
     price_data = price_data.iloc[:, :4]
     price_data = price_data.tail(120)
     print("Smoke-test price_data shape:", price_data.shape)
+    metrics_module.tickers = list(price_data.columns)
+    print("Smoke-test tickers:", metrics_module.tickers)
 
     n = len(price_data)
     train_end = int(n * 0.60)
@@ -86,7 +89,7 @@ def main():
         batch_size=1,
         predictor=QiskitTrainableQNN,
         num_weights=8,
-	num_qubits=4,
+        num_qubits=4,
         encoding="angle",
         input_transformation=radial_to_linear,
         rotation_axes="y",
