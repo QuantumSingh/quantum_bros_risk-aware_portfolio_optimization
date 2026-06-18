@@ -1,0 +1,102 @@
+import os
+import sys
+from pathlib import Path
+
+import pandas as pd
+import torch
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+ORIGINAL_CODE = REPO_ROOT / "original_pennylane" / "qrl-dpo-public"
+
+sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(ORIGINAL_CODE))
+
+os.chdir(ORIGINAL_CODE)
+
+from ddpg.ddpg_functions import DDPG
+from predictors.input_transformations import radial_to_linear
+from qiskit_port.qiskit_exact_amplitude_finite_diff_qnn import (
+    QiskitExactAmplitudeFiniteDiffQNN,
+)
+import utilities.metrics as metrics_module
+
+
+def main():
+    print("Starting exact-amplitude Qiskit QDPG scale-1 test...")
+    print("Original code path:", ORIGINAL_CODE)
+    print("Using predictor:", QiskitExactAmplitudeFiniteDiffQNN)
+    print("radial_to_linear:", radial_to_linear)
+
+    LOOKBACK_WINDOW = 10
+    FORECAST_WINDOW = 0
+    SHORT_SELLING = True
+    CLAMP_NEGATIVES = True
+    SEED = 68
+
+    torch.manual_seed(SEED)
+
+    price_data = pd.read_parquet("./data/price_data.parquet.gzip")
+    print("Full price_data shape:", price_data.shape)
+
+    # Smoke test only: small asset set and short history.
+    price_data = price_data.iloc[:, :4]
+    price_data = price_data.tail(240)
+
+    print("Smoke-test price_data shape:", price_data.shape)
+
+    # Important: original metrics uses global tickers.
+    # Since we sliced to 4 assets, patch tickers to match.
+    metrics_module.tickers = list(price_data.columns)
+    print("Smoke-test tickers:", metrics_module.tickers)
+
+    n = len(price_data)
+    train_end = int(0.6 * n)
+    val_end = int(0.8 * n)
+
+    train_data = price_data.iloc[:train_end]
+    val_data = price_data.iloc[train_end:val_end]
+    test_data = price_data.iloc[val_end:]
+
+    print("Train shape:", train_data.shape)
+    print("Val shape:", val_data.shape)
+    print("Test shape:", test_data.shape)
+
+    model = DDPG(
+        lookback_window=LOOKBACK_WINDOW,
+        forecast_window=FORECAST_WINDOW,
+        batch_size=1,
+        predictor=QiskitExactAmplitudeFiniteDiffQNN,
+        num_weights=16,
+        encoding="amplitude",
+        input_transformation=radial_to_linear,
+        rotation_axes="y",
+        short_selling=SHORT_SELLING,
+        reduce_negatives=CLAMP_NEGATIVES,
+        verbose=1,
+        seed=SEED,
+    )
+
+    print("Training exact-amplitude Qiskit QDPG...")
+
+    model.train(
+        train_data=train_data,
+        val_data=val_data,
+        actor_lr=0.09935741130315447,
+        critic_lr=0.0018039893844072358,
+        optimizer=torch.optim.SGD,
+        l2_lambda=3.2067524338595386e-06,
+        soft_update=False,
+        num_epochs=1,
+        early_stopping=False,
+    )
+
+    print("Evaluating exact-amplitude Qiskit QDPG...")
+
+    results = model.evaluate(test_data=test_data, dpo=True)
+
+    print("Exact-amplitude Qiskit QDPG scale-1 results:")
+    print(results)
+
+
+if __name__ == "__main__":
+    main()

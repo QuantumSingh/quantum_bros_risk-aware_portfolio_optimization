@@ -79,9 +79,17 @@ class _QiskitAmplitudeParameterShift(torch.autograd.Function):
             grad_weights[k] = np.sum(grad_output_np * jac_k)
 
         # ------------------------------------------------------------
-        # 2. Input gradients using central finite difference.
-        # This is needed for DDPG actor learning through the critic.
+        # 2. Optional input gradients using central finite difference.
+        # Full original settings are extremely slow with input gradients.
         # ------------------------------------------------------------
+        if not getattr(module, "compute_input_gradients", False):
+            grad_weights_torch = torch.tensor(
+                grad_weights,
+                dtype=weights.dtype,
+                device=weights.device,
+            )
+            return None, grad_weights_torch, None
+
         grad_inputs = np.zeros_like(inputs_np, dtype=np.float64)
         eps = 1e-4
 
@@ -143,6 +151,7 @@ class QiskitExactAmplitudeFiniteDiffQNN(nn.Module):
         entanglement: str = "reverse_linear",
         device: str = "cpu",
         seed: int | None = None,
+        compute_input_gradients: bool = False,
         **kwargs,
     ):
         super().__init__()
@@ -176,6 +185,7 @@ class QiskitExactAmplitudeFiniteDiffQNN(nn.Module):
         self.input_transformation = input_transformation
         self.entanglement = entanglement
         self.device = device
+        self.compute_input_gradients = compute_input_gradients
 
         if input_transformation is not None:
             name = getattr(input_transformation, "__name__", "")
