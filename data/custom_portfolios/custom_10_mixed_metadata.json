@@ -1,0 +1,38 @@
+{
+  "universe_name": "custom_10_mixed",
+  "description": "Custom 10-asset mixed benchmark with technology, semiconductors, financials, airlines, gold, and bonds.",
+  "source": "Yahoo Finance via yfinance",
+  "requested_start_date": "2018-01-01",
+  "requested_end_date": null,
+  "actual_start_date_after_cleaning": "2018-01-02 00:00:00",
+  "actual_end_date_after_cleaning": "2026-06-25 00:00:00",
+  "tickers_requested": [
+    "MSFT",
+    "AAPL",
+    "NVDA",
+    "AMZN",
+    "INTC",
+    "MU",
+    "JPM",
+    "AAL",
+    "GLD",
+    "TLT"
+  ],
+  "tickers_downloaded": [
+    "MSFT",
+    "AAPL",
+    "NVDA",
+    "AMZN",
+    "INTC",
+    "MU",
+    "JPM",
+    "AAL",
+    "GLD",
+    "TLT"
+  ],
+  "num_rows": 2131,
+  "num_assets": 10,
+  "auto_adjust": true,
+  "parquet_file": "data/custom_portfolios/custom_10_mixed_prices.parquet.gzip",
+  "csv_file": "data/custom_portfolios/custom_10_mixed_prices.csv"
+}

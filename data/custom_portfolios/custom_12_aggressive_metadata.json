@@ -1,0 +1,42 @@
+{
+  "universe_name": "custom_12_aggressive",
+  "description": "Custom 12-asset aggressive benchmark with technology, semiconductors, turnaround/speculative names, cyclicals, financials, gold, and bonds.",
+  "source": "Yahoo Finance via yfinance",
+  "requested_start_date": "2018-01-01",
+  "requested_end_date": null,
+  "actual_start_date_after_cleaning": "2018-01-02 00:00:00",
+  "actual_end_date_after_cleaning": "2026-06-25 00:00:00",
+  "tickers_requested": [
+    "MSFT",
+    "AAL",
+    "NVDA",
+    "INTC",
+    "AAPL",
+    "MU",
+    "NOK",
+    "BB",
+    "AMZN",
+    "JPM",
+    "GLD",
+    "TLT"
+  ],
+  "tickers_downloaded": [
+    "MSFT",
+    "AAL",
+    "NVDA",
+    "INTC",
+    "AAPL",
+    "MU",
+    "NOK",
+    "BB",
+    "AMZN",
+    "JPM",
+    "GLD",
+    "TLT"
+  ],
+  "num_rows": 2131,
+  "num_assets": 12,
+  "auto_adjust": true,
+  "parquet_file": "data/custom_portfolios/custom_12_aggressive_prices.parquet.gzip",
+  "csv_file": "data/custom_portfolios/custom_12_aggressive_prices.csv"
+}
