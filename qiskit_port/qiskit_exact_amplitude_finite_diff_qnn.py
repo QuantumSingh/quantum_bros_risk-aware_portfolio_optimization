@@ -28,6 +28,11 @@ class _QiskitAmplitudeParameterShift(torch.autograd.Function):
 
         outputs = module._forward_numpy(inputs_np, weights_np)
 
+        # PennyLane preserves the input's dimensionality: a single 1-D
+        # state vector produces a 1-D output, not a batch of one.
+        if inputs_np.ndim == 1:
+            outputs = outputs[0]
+
         ctx.module = module
         ctx.save_for_backward(inputs, weights)
 
@@ -62,27 +67,45 @@ class _QiskitAmplitudeParameterShift(torch.autograd.Function):
 
         # ------------------------------------------------------------
         # 1. Weight gradients using exact parameter-shift.
+        #
+        # When rotation_axes has multiple letters (e.g. "xy"), a single
+        # weight drives multiple gates (RX(theta) and RY(theta)) on the
+        # same qubit with the shared value theta. The total derivative is
+        # then the sum of independent single-gate parameter-shift terms,
+        # one per axis, each holding the other axis gates fixed at their
+        # base angle (chain rule for a value reused by several gates).
         # ------------------------------------------------------------
         shift = np.pi / 2.0
+        axes_present = [a for a in "xyz" if a in module.rotation_axes]
 
         for k in range(num_weights):
-            weights_plus = weights_np.copy()
-            weights_minus = weights_np.copy()
+            grad_k = 0.0
 
-            weights_plus[k] += shift
-            weights_minus[k] -= shift
+            for axis in axes_present:
+                out_plus = module._forward_numpy(
+                    inputs_np, weights_np, shift=(k, axis, shift)
+                )
+                out_minus = module._forward_numpy(
+                    inputs_np, weights_np, shift=(k, axis, -shift)
+                )
 
-            out_plus = module._forward_numpy(inputs_np, weights_plus)
-            out_minus = module._forward_numpy(inputs_np, weights_minus)
+                jac_k_axis = 0.5 * (out_plus - out_minus)
+                grad_k += np.sum(grad_output_np * jac_k_axis)
 
-            jac_k = 0.5 * (out_plus - out_minus)
-            grad_weights[k] = np.sum(grad_output_np * jac_k)
+            grad_weights[k] = grad_k
 
         # ------------------------------------------------------------
-        # 2. Optional input gradients using central finite difference.
-        # Full original settings are extremely slow with input gradients.
+        # 2. Input gradients using central finite difference.
+        # Computed when autograd actually needs them (e.g. the DDPG
+        # critic backpropagating into the actor's action) or when
+        # explicitly forced via compute_input_gradients. Skipped
+        # otherwise because full finite difference is expensive.
         # ------------------------------------------------------------
-        if not getattr(module, "compute_input_gradients", False):
+        needs_input_grad = ctx.needs_input_grad[0] or getattr(
+            module, "compute_input_gradients", False
+        )
+
+        if not needs_input_grad:
             grad_weights_torch = torch.tensor(
                 grad_weights,
                 dtype=weights.dtype,
@@ -160,17 +183,13 @@ class QiskitExactAmplitudeFiniteDiffQNN(nn.Module):
             torch.manual_seed(seed)
             np.random.seed(seed)
 
-        if encoding != "amplitude":
-            raise ValueError("This class is only for encoding='amplitude'.")
+        if encoding not in ("amplitude", "angle", "stacked_angle"):
+            raise ValueError(
+                "encoding must be 'amplitude', 'angle', or 'stacked_angle'."
+            )
 
         if not bool(re.fullmatch(r"[xyz]*", rotation_axes)):
             raise ValueError("rotation_axes must only contain x, y, and/or z.")
-
-        if rotation_axes != "y":
-            raise ValueError(
-                "For exact original-paper reproduction, this class currently "
-                "supports rotation_axes='y'."
-            )
 
         if entanglement not in ["linear", "reverse_linear", "full"]:
             raise ValueError("entanglement must be linear, reverse_linear, or full.")
@@ -200,23 +219,36 @@ class QiskitExactAmplitudeFiniteDiffQNN(nn.Module):
 
         if num_qubits is not None:
             self.num_qubits = num_qubits
+        elif encoding in ("angle", "stacked_angle"):
+            self.num_qubits = max(self.actual_input_size, self.output_size)
         else:
             self.num_qubits = max(
                 int(np.ceil(np.log2(self.actual_input_size))),
                 self.output_size,
             )
 
-        self.feature_dim = 2 ** self.num_qubits
+        if encoding == "amplitude":
+            self.feature_dim = 2 ** self.num_qubits
 
-        # PennyLane and Qiskit use opposite amplitude basis ordering.
-        # Bit-reversing amplitudes makes Qiskit forward outputs match PennyLane.
-        self._amplitude_permutation = _bit_reverse_indices(self.num_qubits)
+            # PennyLane and Qiskit use opposite amplitude basis ordering.
+            # Bit-reversing amplitudes makes Qiskit forward outputs match PennyLane.
+            self._amplitude_permutation = _bit_reverse_indices(self.num_qubits)
 
-        if self.actual_input_size > self.feature_dim:
-            raise ValueError(
-                f"actual_input_size={self.actual_input_size} cannot fit into "
-                f"2^{self.num_qubits}={self.feature_dim} amplitudes."
-            )
+            if self.actual_input_size > self.feature_dim:
+                raise ValueError(
+                    f"actual_input_size={self.actual_input_size} cannot fit into "
+                    f"2^{self.num_qubits}={self.feature_dim} amplitudes."
+                )
+        else:
+            self.feature_dim = None
+            self._amplitude_permutation = None
+
+            if encoding == "angle" and self.actual_input_size > self.num_qubits:
+                raise ValueError(
+                    f"Angle encoding selected, but number of features "
+                    f"({self.actual_input_size}) exceeds number of qubits "
+                    f"({self.num_qubits})."
+                )
 
         if num_weights is None:
             num_weights = self.num_qubits
@@ -277,51 +309,125 @@ class QiskitExactAmplitudeFiniteDiffQNN(nn.Module):
                     if i != j:
                         qc.cx(i, j)
 
-    def _build_numeric_circuit(self, amplitudes, weights):
+    def _encoding_rotation_gate(self, qc):
+        # AngleEncoding/StackedAngleEncoding always pick RX if 'x' is in
+        # rotation_axes, else RY -- independent of 'z'.
+        return qc.rx if "x" in self.rotation_axes else qc.ry
+
+    def _add_angle_encoding(self, qc, features):
+        gate_fn = self._encoding_rotation_gate(qc)
+
+        # Matches AngleEncoding.compute_decomposition: one rotation per
+        # wire, indexed straight from the feature vector (no wraparound).
+        for i in range(self.num_qubits):
+            gate_fn(float(features[i]), i)
+
+    def _add_stacked_angle_encoding(self, qc, features):
+        gate_fn = self._encoding_rotation_gate(qc)
+        num_qubits = self.num_qubits
+        num_features = len(features)
+
+        # Matches StackedAngleEncoding.compute_decomposition, including its
+        # "full" entanglement quirk that reuses the outer feature index i
+        # (rather than a qubit index) as one CNOT endpoint.
+        for i in range(num_features):
+            target = i % num_qubits
+            gate_fn(float(features[i]), target)
+
+            if (i + 1) % num_qubits == 0:
+                if self.entanglement == "linear":
+                    for j in range(num_qubits - 1):
+                        qc.cx(j, j + 1)
+                elif self.entanglement == "reverse_linear":
+                    for j in range(num_qubits - 1, 0, -1):
+                        qc.cx(j - 1, j)
+                elif self.entanglement == "full":
+                    for j in range(num_qubits):
+                        if i != j:
+                            qc.cx(i, j)
+
+    def _build_numeric_circuit(self, sample, weights, shift=None):
+        """Build the ansatz circuit.
+
+        ``shift`` is an optional ``(weight_index, axis, delta)`` override
+        used for per-gate parameter-shift evaluation: only the gate at
+        ``weight_index`` for the given ``axis`` gets ``value + delta``,
+        while any other gate driven by the same weight (e.g. the RY gate
+        when rotation_axes="xy" and we're shifting the RX gate) stays at
+        its unshifted base value.
+        """
         qc = QuantumCircuit(self.num_qubits)
 
-        # Numeric amplitude encoding: PennyLane AmplitudeEncoding equivalent.
-        qc.initialize(amplitudes, list(range(self.num_qubits)))
+        if self.encoding == "amplitude":
+            # Numeric amplitude encoding: PennyLane AmplitudeEncoding equivalent.
+            qc.initialize(sample, list(range(self.num_qubits)))
+        elif self.encoding == "angle":
+            self._add_angle_encoding(qc, sample)
+        elif self.encoding == "stacked_angle":
+            self._add_stacked_angle_encoding(qc, sample)
+
+        gates_by_axis = (("x", qc.rx), ("y", qc.ry), ("z", qc.rz))
 
         # Match PennyLane ParameterizedQuantumCircuit.
         for i, param in enumerate(weights.flatten()):
             q = i % self.num_qubits
+            base = float(param)
 
-            # Original paper uses rotation_axes='y'.
-            qc.ry(float(param), q)
+            # Same weight value drives every requested axis on this qubit,
+            # matching ParameterizedQuantumCircuit.__call__ in the original.
+            for axis, gate_fn in gates_by_axis:
+                if axis not in self.rotation_axes:
+                    continue
+
+                angle = base
+                if shift is not None and shift[0] == i and shift[1] == axis:
+                    angle = base + shift[2]
+
+                gate_fn(angle, q)
 
             if (i + 1) % self.num_qubits == 0 and (i + 1) != len(weights):
                 self._add_entanglement(qc)
 
         return qc
 
-    def _z_expectation(self, state, qubit):
+    def _z_expectations(self, state, num_measurements):
         probs = np.abs(state.data) ** 2
+        indices = np.arange(probs.shape[0])
 
-        expval = 0.0
-        for basis_index, prob in enumerate(probs):
-            bit = (basis_index >> qubit) & 1
-            expval += prob * (1.0 if bit == 0 else -1.0)
+        expvals = np.empty(num_measurements, dtype=np.float64)
+        for q in range(num_measurements):
+            signs = 1.0 - 2.0 * ((indices >> q) & 1)
+            expvals[q] = np.dot(probs, signs)
 
-        return expval
+        return expvals
 
-    def _forward_numpy(self, inputs_np, weights_np):
-        encoded = self._pad_and_normalize_numpy(inputs_np)
+    def _prepare_samples_numpy(self, inputs_np):
+        if self.encoding == "amplitude":
+            return self._pad_and_normalize_numpy(inputs_np)
+
+        if inputs_np.ndim == 1:
+            inputs_np = inputs_np.reshape(1, -1)
+
+        if inputs_np.shape[-1] != self.actual_input_size:
+            raise ValueError(
+                f"Input has shape {inputs_np.shape}, expected final dim "
+                f"{self.actual_input_size}."
+            )
+
+        return inputs_np.astype(np.float64, copy=False)
+
+    def _forward_numpy(self, inputs_np, weights_np, shift=None):
+        encoded = self._prepare_samples_numpy(inputs_np)
 
         outputs = []
 
         num_measurements = self.num_qubits if self.classical_layers else self.output_size
 
         for sample in encoded:
-            qc = self._build_numeric_circuit(sample, weights_np)
+            qc = self._build_numeric_circuit(sample, weights_np, shift=shift)
             state = Statevector.from_instruction(qc)
 
-            sample_outputs = [
-                self._z_expectation(state, q)
-                for q in range(num_measurements)
-            ]
-
-            outputs.append(sample_outputs)
+            outputs.append(self._z_expectations(state, num_measurements))
 
         return np.array(outputs, dtype=np.float64)
 

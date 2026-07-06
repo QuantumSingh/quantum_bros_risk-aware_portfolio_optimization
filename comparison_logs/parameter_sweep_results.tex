@@ -1,0 +1,18 @@
+\begin{tabular}{llrrrrrlrrrrl}
+\toprule
+run_id & dataset & rows & assets & lookback_window & max_epochs & epochs_completed & early_stopping_triggered & final_val_critic_loss & runtime_seconds & dpo_profit_pa & dpo_sharpe & status \\
+\midrule
+rows_120 & original_paper_subset & 120 & 4 & 5 & 50 & 50.0000 & False & 0.0011 & 11.5798 & 1.3182 & 3.4581 & ok \\
+rows_240 & original_paper_subset & 240 & 4 & 5 & 50 & 24.0000 & True & 0.0017 & 11.7785 & 0.8704 & 2.1889 & ok \\
+rows_600 & original_paper_subset & 600 & 4 & 5 & 50 & 19.0000 & True & 0.0021 & 22.5550 & -0.1073 & -0.4815 & ok \\
+rows_1768 & original_paper_subset & 1768 & 4 & 5 & 50 & 12.0000 & True & 0.0012 & 42.4794 & 0.0455 & 0.0110 & ok \\
+lookback_10 & original_paper_subset & 240 & 4 & 10 & 50 & 50.0000 & False & 0.0179 & 8.2649 & 1.4148 & 4.9041 & ok \\
+epochs_10_noES & original_paper_subset & 240 & 4 & 5 & 10 & 10.0000 & False & NaN & 4.3483 & 0.3798 & 0.9554 & ok \\
+epochs_25_noES & original_paper_subset & 240 & 4 & 5 & 25 & 25.0000 & False & NaN & 10.0204 & 0.9528 & 2.3082 & ok \\
+epochs_50_noES & original_paper_subset & 240 & 4 & 5 & 50 & 50.0000 & False & NaN & 20.1385 & 1.1440 & 2.6734 & ok \\
+epochs_100_noES & original_paper_subset & 240 & 4 & 5 & 100 & 100.0000 & False & NaN & 40.8064 & 1.1501 & 2.7565 & ok \\
+epochs_100_ES & original_paper_subset & 240 & 4 & 5 & 100 & 24.0000 & True & 0.0017 & 10.9846 & 0.8704 & 2.1889 & ok \\
+assets_10_custom & custom_nonpaper_10 & 240 & 10 & 5 & 50 & 50.0000 & False & 0.0020 & 29.2405 & 36.4665 & 3.4976 & ok \\
+batch_4_probe & original_paper_subset & 240 & 4 & 5 & 2 & NaN & NaN & NaN & NaN & NaN & NaN & FAILED: ValueError: Provided tensor has shape torch.Size([320]), but input size is configured to 80 \\
+\bottomrule
+\end{tabular}

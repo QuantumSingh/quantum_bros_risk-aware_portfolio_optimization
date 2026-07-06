@@ -58,6 +58,7 @@ def run_test(use_radial):
         rotation_axes="y",
         entanglement="reverse_linear",
         seed=68,
+        compute_input_gradients=True,
     )
 
     pl_weight_name, pl_weight = get_pl_weight_param(pl_model)

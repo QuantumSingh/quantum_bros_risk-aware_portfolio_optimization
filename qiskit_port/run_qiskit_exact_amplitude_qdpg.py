@@ -74,6 +74,7 @@ def main():
         reduce_negatives=CLAMP_NEGATIVES,
         verbose=1,
         seed=SEED,
+	compute_input_gradients=True,
     )
 
     print("Training exact-amplitude Qiskit QDPG...")

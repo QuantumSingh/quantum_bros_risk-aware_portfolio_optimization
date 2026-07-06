@@ -1,0 +1,53 @@
+Benchmark 1 config:
+  dataset_name: original_paper_subset_4assets_240rows
+  rows: 240
+  num_assets: 4
+  lookback_window: 10
+  forecast_window: 0
+  num_weights: 16
+  max_epochs: 25
+  early_stopping: True
+  patience: 5
+  min_delta: 0.0001
+  seed: 68
+  short_selling: True
+  clamp_negatives: True
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+
+Resume: skipping Equal Weight (cached row + series)
+
+Resume: skipping Mean Variance Optimization (cached row + series)
+
+Resume: skipping Classical DDPG (cached row + series)
+
+Resume: skipping Classical Deep Q-Learning (cached row + series)
+
+Resume: skipping PennyLane QDPG (cached row + series)
+
+Resume: skipping PennyLane Quantum Q-Learning (cached row + series)
+
+Resume: skipping Qiskit QDPG (cached row + series)
+
+================================================================================
+Running: Qiskit Quantum Q-Learning
+================================================================================
+Runtime: 2347.0s
+SPO profit p.a.: 68.35%  sharpe 1.266
+DPO profit p.a.: 18.85%  sharpe 0.537
+DPO turnover: 0.9359  TC-adj return: 13.12%
+
+Saved: real_data_benchmark_results.csv real_data_benchmark_results.tex real_data_benchmark_results.md
