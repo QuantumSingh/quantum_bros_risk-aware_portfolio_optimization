@@ -99,7 +99,8 @@ def plot_cumulative_returns(prefix: str, out_name: str, title: str):
             continue
         curve = np.cumprod(1.0 + r) - 1.0
         ax.plot(np.arange(1, len(curve) + 1), curve * 100,
-                label=model, color=MODEL_COLORS.get(model), linewidth=1.8)
+                label=model, color=MODEL_COLORS.get(model), linewidth=1.8,
+                linestyle="--" if "Q-Learning" in model else "-")
         plotted = True
     if not plotted:
         plt.close(fig)
@@ -243,21 +244,20 @@ def sweep_figures():
         ax.grid(alpha=0.3)
         finish(fig, "runtime_vs_epochs.png")
 
-        fig, ax = plt.subplots(figsize=(7, 4.5))
-        ax.plot(ep_df["max_epochs"], ep_df["dpo_sharpe"], "o-",
-                label="DPO Sharpe")
-        ax2 = ax.twinx()
-        ax2.plot(ep_df["max_epochs"], ep_df["dpo_profit_pa"] * 100, "s--",
-                 color="#d62728", label="DPO profit p.a. (%)")
-        ax.set_xlabel("Epochs")
-        ax.set_ylabel("DPO Sharpe")
-        ax2.set_ylabel("DPO profit p.a. (%)")
-        lines1, labels1 = ax.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax.legend(lines1 + lines2, labels1 + labels2, fontsize=8,
-                  loc="lower right")
-        ax.set_title("Test metrics vs training epochs (plateau ~50)")
-        ax.grid(alpha=0.3)
+        # Two measures of different scale -> two stacked panels sharing
+        # the x axis (never a dual-axis chart).
+        fig, (ax_top, ax_bot) = plt.subplots(
+            2, 1, figsize=(7, 6.5), sharex=True)
+        ax_top.plot(ep_df["max_epochs"], ep_df["dpo_sharpe"], "o-")
+        ax_top.set_ylabel("DPO Sharpe")
+        ax_bot.plot(ep_df["max_epochs"], ep_df["dpo_profit_pa"] * 100, "o-",
+                    color="#d62728")
+        ax_bot.set_ylabel("DPO profit p.a. (%)")
+        ax_bot.set_xlabel("Epochs")
+        ax_top.set_title("Test metrics vs training epochs (plateau ~50)")
+        for ax in (ax_top, ax_bot):
+            ax.grid(alpha=0.3)
+        fig.tight_layout()
         finish(fig, "metric_vs_epochs.png")
 
     # Summary 2x2
@@ -287,6 +287,107 @@ def sweep_figures():
     fig.suptitle("Parameter sweep summary (PennyLane QDPG)")
     fig.tight_layout()
     finish(fig, "parameter_sweep_summary.png")
+
+
+# ---------------------------------------------------------------------------
+# Stress-test and tail-risk figures
+# ---------------------------------------------------------------------------
+
+STRESS_WINDOWS = ["covid_crash_2020", "bear_2022", "calm_2024"]
+STRESS_TITLES = {
+    "covid_crash_2020": "COVID crash (2020-02-15 .. 2020-06-30)",
+    "bear_2022": "2022 bear market",
+    "calm_2024": "2024 calm control",
+}
+
+
+def stress_figures():
+    csv_path = COMPARISON_DIR / "stress_test_results.csv"
+    if not csv_path.exists():
+        print("SKIP: stress test results not found")
+        return
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.8), sharey=False)
+    for ax, window in zip(axes, STRESS_WINDOWS):
+        for model in MODEL_ORDER:
+            path = SERIES_DIR / f"stress_{window}_{safe_name(model)}.npz"
+            if not path.exists():
+                continue
+            r = np.load(path)["dpo_daily_returns"]
+            curve = (np.cumprod(1.0 + r) - 1.0) * 100
+            ax.plot(np.arange(1, len(curve) + 1), curve, linewidth=1.6,
+                    label=model, color=MODEL_COLORS.get(model),
+                    linestyle="--" if "Q-Learning" in model else "-")
+        ax.axhline(0, color="black", linewidth=0.6)
+        ax.set_title(STRESS_TITLES[window], fontsize=10)
+        ax.set_xlabel("Test day")
+        ax.grid(alpha=0.3)
+    axes[0].set_ylabel("Cumulative return (%)")
+    axes[0].legend(fontsize=7, loc="lower left")
+    fig.suptitle("Historical stress tests (DPO; models retrained on data "
+                 "preceding each window)")
+    fig.tight_layout()
+    finish(fig, "stress_test_cumulative.png")
+
+    df = pd.read_csv(csv_path)
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+    width = 0.25
+    models = [m for m in MODEL_ORDER if m in set(df["model"])]
+    x = np.arange(len(models))
+    for i, window in enumerate(STRESS_WINDOWS):
+        sub = df[df["window"] == window].set_index("model")
+        mdd = [sub.loc[m, "tail_max_drawdown"] if m in sub.index else np.nan
+               for m in models]
+        cvar = [sub.loc[m, "tail_cvar_5"] if m in sub.index else np.nan
+                for m in models]
+        axes[0].bar(x + (i - 1) * width, np.array(mdd) * 100, width,
+                    label=STRESS_TITLES[window])
+        axes[1].bar(x + (i - 1) * width, np.array(cvar) * 100, width,
+                    label=STRESS_TITLES[window])
+    axes[0].set_title("Max drawdown (%)", fontsize=10)
+    axes[1].set_title("CVaR 5% (daily, %)", fontsize=10)
+    for ax in axes:
+        ax.set_xticks(x)
+        ax.set_xticklabels(models, rotation=30, ha="right", fontsize=7)
+        ax.grid(alpha=0.3, axis="y")
+    axes[0].legend(fontsize=7)
+    fig.suptitle("Tail risk under stress windows")
+    fig.tight_layout()
+    finish(fig, "stress_test_tail_risk.png")
+
+
+def tail_risk_figure():
+    csv_path = COMPARISON_DIR / "tail_risk_results.csv"
+    if not csv_path.exists():
+        print("SKIP: tail risk results not found")
+        return
+    df = pd.read_csv(csv_path)
+
+    benchmarks = list(df["benchmark"].unique())
+    metrics = [("max_drawdown", "Max drawdown (%)", 100),
+               ("cvar_5", "CVaR 5% (daily, %)", 100),
+               ("worst_day", "Worst day (%)", 100),
+               ("excess_kurtosis", "Excess kurtosis", 1)]
+    fig, axes = plt.subplots(1, 4, figsize=(18, 4.6))
+    width = 0.38
+    models = [m for m in MODEL_ORDER if m in set(df["model"])]
+    x = np.arange(len(models))
+    for ax, (col, title, scale) in zip(axes, metrics):
+        for i, bench in enumerate(benchmarks):
+            sub = df[df["benchmark"] == bench].set_index("model")
+            vals = [sub.loc[m, col] * scale if m in sub.index else np.nan
+                    for m in models]
+            ax.bar(x + (i - 0.5) * width, vals, width,
+                   label=bench.replace("benchmark", "B"))
+        ax.set_title(title, fontsize=10)
+        ax.set_xticks(x)
+        ax.set_xticklabels(models, rotation=40, ha="right", fontsize=6.5)
+        ax.grid(alpha=0.3, axis="y")
+        ax.axhline(0, color="black", linewidth=0.6)
+    axes[0].legend(fontsize=7)
+    fig.suptitle("Tail-risk profile of the benchmark strategies (DPO)")
+    fig.tight_layout()
+    finish(fig, "tail_risk_comparison.png")
 
 
 # ---------------------------------------------------------------------------
@@ -416,6 +517,9 @@ def main():
             "Benchmark 2: metrics comparison")
 
     sweep_figures()
+
+    stress_figures()
+    tail_risk_figure()
 
     new_metrics_outputs({"benchmark1": bench1, "benchmark2": bench2})
 
