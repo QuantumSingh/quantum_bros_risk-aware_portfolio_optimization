@@ -27,6 +27,24 @@ PLOTS_DIR = COMPARISON_DIR / "plots"
 SERIES_DIR = COMPARISON_DIR / "series"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Paper/poster style: readable sizes, no chart junk, max 2 panels/figure.
+plt.rcParams.update({
+    "savefig.dpi": 200,
+    "axes.titlesize": 13,
+    "axes.titleweight": "semibold",
+    "axes.labelsize": 11.5,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 9.5,
+    "legend.framealpha": 0.9,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "axes.grid": True,
+    "grid.alpha": 0.25,
+    "lines.linewidth": 1.9,
+    "figure.autolayout": False,
+})
+
 MODEL_ORDER = [
     "Equal Weight",
     "Mean Variance Optimization",
@@ -134,26 +152,37 @@ def plot_runtime_bar(df: pd.DataFrame, out_name: str, title: str):
     finish(fig, out_name)
 
 
-def plot_metrics_comparison(df: pd.DataFrame, out_name: str, title: str):
-    metrics = [
-        ("dpo_sharpe", "Sharpe (DPO)"),
-        ("dpo_annualized_return", "Annualized return (CAGR)"),
-        ("dpo_annualized_volatility", "Annualized volatility"),
-        ("dpo_var_5", "VaR 5% (daily)"),
-    ]
-    metrics = [(c, l) for c, l in metrics if c in df.columns]
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    for ax, (col, label) in zip(axes.flat, metrics):
+def two_panel_bars(df: pd.DataFrame, metric_pair, out_name: str, title: str):
+    """One figure, exactly two bar panels (max-2-panels rule)."""
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5))
+    for ax, (col, label) in zip(axes, metric_pair):
+        if col not in df.columns:
+            continue
         sub = df.dropna(subset=[col])
         colors = [MODEL_COLORS.get(m, "#333333") for m in sub["model"]]
         ax.bar(sub["model"], sub[col], color=colors)
-        ax.set_title(label, fontsize=10)
-        ax.tick_params(axis="x", rotation=60, labelsize=7)
-        ax.grid(alpha=0.3, axis="y")
+        ax.set_title(label)
+        ax.tick_params(axis="x", rotation=40, labelsize=8)
+        for lbl in ax.get_xticklabels():
+            lbl.set_ha("right")
+        ax.grid(alpha=0.25, axis="y")
         ax.axhline(0, color="black", linewidth=0.6)
     fig.suptitle(title)
     fig.tight_layout()
     finish(fig, out_name)
+
+
+def plot_metrics_comparison(df: pd.DataFrame, out_name: str, title: str):
+    two_panel_bars(
+        df,
+        [("dpo_sharpe", "Sharpe (DPO)"),
+         ("dpo_annualized_return", "Annualized return (CAGR)")],
+        out_name, title)
+    two_panel_bars(
+        df,
+        [("dpo_annualized_volatility", "Annualized volatility"),
+         ("dpo_var_5", "VaR 5% (daily)")],
+        out_name.replace(".png", "_risk.png"), title + " — risk")
 
 
 def plot_training_loss_curves(prefix: str, out_name: str, title: str):
@@ -195,11 +224,17 @@ def sweep_figures():
         return
     df = pd.read_csv(csv_path)
 
-    # Epoch plateau: loss curves from the 100-epoch no-ES run
-    npz_path = SERIES_DIR / "sweep_epochs_100_noES.npz"
-    if npz_path.exists():
+    # Epoch plateau: loss curves from the LONGEST no-ES run available
+    # (500 > 200 > 100 epochs).
+    candidates = sorted(
+        SERIES_DIR.glob("sweep_epochs_*_noES.npz"),
+        key=lambda p: int(p.stem.split("_")[2]),
+    )
+    if candidates:
+        npz_path = candidates[-1]
+        n_epochs_run = int(npz_path.stem.split("_")[2])
         data = np.load(npz_path)
-        fig, ax = plt.subplots(figsize=(8, 4.5))
+        fig, ax = plt.subplots(figsize=(9, 4.8))
         epochs = np.arange(1, len(data["actor_loss"]) + 1)
         ax.plot(epochs, data["actor_loss"], label="Actor loss")
         ax.plot(epochs, data["critic_loss"], label="Critic loss")
@@ -213,9 +248,9 @@ def sweep_figures():
                        label=f"Early stop (patience 5) @ {stop}")
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Loss")
-        ax.set_title("PennyLane QDPG training plateau (240 rows, 4 assets)")
-        ax.legend(fontsize=8)
-        ax.grid(alpha=0.3)
+        ax.set_title(f"PennyLane QDPG training losses over {n_epochs_run} "
+                     "epochs (240 rows, 4 assets)")
+        ax.legend()
         finish(fig, "epoch_plateau_loss_curve.png")
 
     rows_df = df[df["run_id"].str.startswith("rows_")].dropna(
@@ -260,33 +295,38 @@ def sweep_figures():
         fig.tight_layout()
         finish(fig, "metric_vs_epochs.png")
 
-    # Summary 2x2
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    # Summary: two figures of two panels each (max-2-panels rule)
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8))
     if len(rows_df):
-        axes[0, 0].plot(rows_df["rows"], rows_df["dpo_sharpe"], "o-")
-        axes[0, 0].set_title("DPO Sharpe vs rows\n(caveat: test window shifts too)",
-                             fontsize=9)
-        axes[0, 0].set_xlabel("Rows")
+        axes[0].plot(rows_df["rows"], rows_df["dpo_sharpe"], "o-")
+        axes[0].set_title("DPO Sharpe vs rows\n(caveat: test window shifts too)")
+        axes[0].set_xlabel("Rows")
+        axes[0].set_ylabel("DPO Sharpe")
     if len(ep_df):
-        axes[0, 1].plot(ep_df["max_epochs"], ep_df["dpo_sharpe"], "o-")
-        axes[0, 1].set_title("DPO Sharpe vs epochs (no ES)", fontsize=9)
-        axes[0, 1].set_xlabel("Epochs")
-        axes[1, 0].plot(ep_df["max_epochs"], ep_df["runtime_seconds"], "o-")
-        axes[1, 0].set_title("Runtime vs epochs", fontsize=9)
-        axes[1, 0].set_xlabel("Epochs")
-        axes[1, 0].set_ylabel("s")
-    lb_df = df[df["run_id"].isin(["rows_240", "lookback_10"])]
-    if len(lb_df) == 2:
-        axes[1, 1].bar(lb_df["lookback_window"].astype(str),
-                       lb_df["dpo_sharpe"], width=0.5,
-                       color=["#1f77b4", "#2ca02c"])
-        axes[1, 1].set_title("DPO Sharpe vs lookback window", fontsize=9)
-        axes[1, 1].set_xlabel("Lookback")
-    for ax in axes.flat:
-        ax.grid(alpha=0.3)
+        axes[1].plot(ep_df["max_epochs"], ep_df["dpo_sharpe"], "o-")
+        axes[1].set_title("DPO Sharpe vs epochs (no ES)")
+        axes[1].set_xlabel("Epochs")
     fig.suptitle("Parameter sweep summary (PennyLane QDPG)")
     fig.tight_layout()
     finish(fig, "parameter_sweep_summary.png")
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8))
+    if len(ep_df):
+        axes[0].plot(ep_df["max_epochs"], ep_df["runtime_seconds"], "o-")
+        axes[0].set_title("Training runtime vs epochs")
+        axes[0].set_xlabel("Epochs")
+        axes[0].set_ylabel("Seconds")
+    lb_df = df[df["run_id"].isin(["rows_240", "lookback_10"])]
+    if len(lb_df) == 2:
+        axes[1].bar(lb_df["lookback_window"].astype(str),
+                    lb_df["dpo_sharpe"], width=0.5,
+                    color=["#1f77b4", "#2ca02c"])
+        axes[1].set_title("DPO Sharpe vs lookback window")
+        axes[1].set_xlabel("Lookback")
+        axes[1].set_ylabel("DPO Sharpe")
+    fig.suptitle("Parameter sweep: cost and lookback (PennyLane QDPG)")
+    fig.tight_layout()
+    finish(fig, "parameter_sweep_runtime.png")
 
 
 # ---------------------------------------------------------------------------
@@ -307,27 +347,30 @@ def stress_figures():
         print("SKIP: stress test results not found")
         return
 
-    fig, axes = plt.subplots(1, 3, figsize=(16, 4.8), sharey=False)
-    for ax, window in zip(axes, STRESS_WINDOWS):
+    # One window per figure (max-2-panels rule; these read better solo).
+    for window in STRESS_WINDOWS:
+        fig, ax = plt.subplots(figsize=(9, 5))
+        plotted = False
         for model in MODEL_ORDER:
             path = SERIES_DIR / f"stress_{window}_{safe_name(model)}.npz"
             if not path.exists():
                 continue
             r = np.load(path)["dpo_daily_returns"]
             curve = (np.cumprod(1.0 + r) - 1.0) * 100
-            ax.plot(np.arange(1, len(curve) + 1), curve, linewidth=1.6,
+            ax.plot(np.arange(1, len(curve) + 1), curve,
                     label=model, color=MODEL_COLORS.get(model),
                     linestyle="--" if "Q-Learning" in model else "-")
+            plotted = True
+        if not plotted:
+            plt.close(fig)
+            continue
         ax.axhline(0, color="black", linewidth=0.6)
-        ax.set_title(STRESS_TITLES[window], fontsize=10)
+        ax.set_title(f"Stress test — {STRESS_TITLES[window]}\n"
+                     "(DPO; models retrained on data preceding the window)")
         ax.set_xlabel("Test day")
-        ax.grid(alpha=0.3)
-    axes[0].set_ylabel("Cumulative return (%)")
-    axes[0].legend(fontsize=7, loc="lower left")
-    fig.suptitle("Historical stress tests (DPO; models retrained on data "
-                 "preceding each window)")
-    fig.tight_layout()
-    finish(fig, "stress_test_cumulative.png")
+        ax.set_ylabel("Cumulative return (%)")
+        ax.legend(loc="best", fontsize=8.5)
+        finish(fig, f"stress_cumulative_{window}.png")
 
     df = pd.read_csv(csv_path)
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
@@ -364,30 +407,118 @@ def tail_risk_figure():
     df = pd.read_csv(csv_path)
 
     benchmarks = list(df["benchmark"].unique())
-    metrics = [("max_drawdown", "Max drawdown (%)", 100),
-               ("cvar_5", "CVaR 5% (daily, %)", 100),
-               ("worst_day", "Worst day (%)", 100),
-               ("excess_kurtosis", "Excess kurtosis", 1)]
-    fig, axes = plt.subplots(1, 4, figsize=(18, 4.6))
-    width = 0.38
     models = [m for m in MODEL_ORDER if m in set(df["model"])]
     x = np.arange(len(models))
-    for ax, (col, title, scale) in zip(axes, metrics):
-        for i, bench in enumerate(benchmarks):
-            sub = df[df["benchmark"] == bench].set_index("model")
-            vals = [sub.loc[m, col] * scale if m in sub.index else np.nan
-                    for m in models]
-            ax.bar(x + (i - 0.5) * width, vals, width,
-                   label=bench.replace("benchmark", "B"))
-        ax.set_title(title, fontsize=10)
-        ax.set_xticks(x)
-        ax.set_xticklabels(models, rotation=40, ha="right", fontsize=6.5)
-        ax.grid(alpha=0.3, axis="y")
-        ax.axhline(0, color="black", linewidth=0.6)
-    axes[0].legend(fontsize=7)
-    fig.suptitle("Tail-risk profile of the benchmark strategies (DPO)")
+    width = 0.38
+
+    def tail_pair(metric_pair, out_name, suptitle):
+        fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+        for ax, (col, title, scale) in zip(axes, metric_pair):
+            for i, bench in enumerate(benchmarks):
+                sub = df[df["benchmark"] == bench].set_index("model")
+                vals = [sub.loc[m, col] * scale if m in sub.index else np.nan
+                        for m in models]
+                ax.bar(x + (i - 0.5) * width, vals, width,
+                       label=bench.replace("benchmark", "B"))
+            ax.set_title(title)
+            ax.set_xticks(x)
+            ax.set_xticklabels(models, rotation=40, ha="right", fontsize=8)
+            ax.grid(alpha=0.25, axis="y")
+            ax.axhline(0, color="black", linewidth=0.6)
+        axes[0].legend()
+        fig.suptitle(suptitle)
+        fig.tight_layout()
+        finish(fig, out_name)
+
+    tail_pair([("max_drawdown", "Max drawdown (%)", 100),
+               ("cvar_5", "CVaR 5% (daily, %)", 100)],
+              "tail_risk_comparison.png",
+              "Tail-risk profile of the benchmark strategies (DPO)")
+    tail_pair([("worst_day", "Worst day (%)", 100),
+               ("excess_kurtosis", "Excess kurtosis", 1)],
+              "tail_risk_shape.png",
+              "Tail shape of the benchmark strategies (DPO)")
+
+
+# ---------------------------------------------------------------------------
+# Robustness / anti-artifact figures
+# ---------------------------------------------------------------------------
+
+def robustness_figures():
+    csv_path = COMPARISON_DIR / "robustness_checks.csv"
+    if not csv_path.exists():
+        print("SKIP: robustness checks not found")
+        return
+    df = pd.read_csv(csv_path)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+    # Panel 1: multi-seed distributions vs placebo, with EW reference.
+    seed_df = df[df.test == "A_multiseed"]
+    groups, labels = [], []
+    for label in ["PennyLane QDPG", "Classical DDPG"]:
+        vals = seed_df[seed_df.model == label]["sharpe"].dropna().values
+        if len(vals):
+            groups.append(vals)
+            labels.append(f"{label}\n(10 seeds)")
+    placebo = df[df.test == "B_placebo"]["sharpe"].dropna().values
+    if len(placebo):
+        groups.append(placebo)
+        labels.append("Placebo: shuffled\ntraining data")
+    axes[0].boxplot(groups, tick_labels=labels, widths=0.5)
+    for i, vals in enumerate(groups):
+        axes[0].scatter(np.full(len(vals), i + 1) +
+                        np.random.default_rng(0).uniform(-0.07, 0.07, len(vals)),
+                        vals, s=18, alpha=0.7, color="#1f77b4", zorder=3)
+    ew = seed_df[seed_df.model == "Equal Weight"]["sharpe"]
+    if len(ew):
+        axes[0].axhline(float(ew.iloc[0]), color="#888888", linestyle="--",
+                        label="Equal Weight (deterministic)")
+        axes[0].legend()
+    axes[0].set_ylabel("Test DPO Sharpe")
+    axes[0].set_title("Seed robustness and the shuffled-data placebo")
+
+    # Panel 2: null distributions vs trained models.
+    null_path = SERIES_DIR / "robustness_random_null_sharpes.npy"
+    if null_path.exists():
+        null = np.load(null_path)
+        axes[1].hist(null, bins=60, alpha=0.55, color="#bbbbbb",
+                     label="Random policies (2000)", density=True)
+    untrained = df[df.test == "D_untrained"]["sharpe"].dropna().values
+    if len(untrained):
+        axes[1].hist(untrained, bins=12, alpha=0.6, color="#9edae5",
+                     label="Untrained QNN actors (20)", density=True)
+    qdpg68 = df[(df.test == "A_multiseed") & (df.model == "PennyLane QDPG")
+                & (df.seed == 68)]["sharpe"]
+    if len(qdpg68):
+        axes[1].axvline(float(qdpg68.iloc[0]), color="#2ca02c", linewidth=2,
+                        label="Trained PennyLane QDPG (seed 68)")
+    axes[1].set_xlabel("Test DPO Sharpe")
+    axes[1].set_ylabel("Density")
+    axes[1].set_title("Trained policy vs no-skill nulls")
+    axes[1].legend(fontsize=8.5)
+    fig.suptitle("Anti-artifact checks (Benchmark 1 configuration)")
     fig.tight_layout()
-    finish(fig, "tail_risk_comparison.png")
+    finish(fig, "robustness_seed_distribution.png")
+
+    # Walk-forward folds (single panel)
+    wf = df[df.test == "E_walkforward"]
+    if len(wf):
+        fig, ax = plt.subplots(figsize=(10, 5))
+        for label in ["Equal Weight", "Classical DDPG", "PennyLane QDPG"]:
+            sub = wf[wf.model == label].sort_values("fold")
+            ax.plot(sub["fold"], sub["sharpe"], "o-", label=label,
+                    color=MODEL_COLORS.get(label))
+        ax.axhline(0, color="black", linewidth=0.6)
+        folds = wf[wf.model == "Equal Weight"].sort_values("fold")
+        ax.set_xticks(folds["fold"])
+        ax.set_xticklabels([str(t)[:10] for t in folds["fold_test"]],
+                           rotation=40, ha="right", fontsize=8)
+        ax.set_xlabel("Fold (test-window start date)")
+        ax.set_ylabel("Test DPO Sharpe")
+        ax.set_title("Walk-forward evaluation: 10 rolling 240-row folds")
+        ax.legend()
+        finish(fig, "walk_forward_folds.png")
 
 
 # ---------------------------------------------------------------------------
@@ -422,30 +553,28 @@ def new_metrics_outputs(benchmarks: dict):
     agg.to_latex(tex_path, index=False, float_format="%.4f")
     print("Wrote", csv_path.name, "and", tex_path.name)
 
-    # Grouped bar chart of the five new metrics (per benchmark)
+    # New metrics per benchmark: two 2-panel figures instead of one 1x5.
     for label, df in benchmarks.items():
         if df is None:
             continue
-        sub = df.dropna(subset=[c for c in NEW_METRIC_COLS if c in df.columns],
-                        how="all")
-        fig, axes = plt.subplots(1, 5, figsize=(20, 4.2))
-        titles = ["Annualized return (CAGR)", "Annualized volatility",
-                  "VaR 5% (daily)", "Avg one-way turnover",
-                  "TC-adjusted annual return (10 bps)"]
-        for ax, col, title in zip(axes, NEW_METRIC_COLS, titles):
-            colors = [MODEL_COLORS.get(m, "#333333") for m in sub["model"]]
-            ax.bar(sub["model"], sub[col], color=colors)
-            ax.set_title(title, fontsize=9)
-            ax.tick_params(axis="x", rotation=75, labelsize=6)
-            ax.grid(alpha=0.3, axis="y")
-            ax.axhline(0, color="black", linewidth=0.6)
-        fig.suptitle(f"Five new metrics — {label}")
-        fig.tight_layout()
-        finish(fig, f"new_metrics_bar_chart_{label}.png"
-               if label != "benchmark1" else "new_metrics_bar_chart.png")
+        two_panel_bars(
+            df,
+            [("dpo_annualized_return", "Annualized return (CAGR)"),
+             ("dpo_tc_adjusted_annual_return",
+              "TC-adjusted annual return (10 bps)")],
+            f"new_metrics_bar_chart_{label}.png"
+            if label != "benchmark1" else "new_metrics_bar_chart.png",
+            f"Return metrics — {label}")
+        two_panel_bars(
+            df,
+            [("dpo_annualized_volatility", "Annualized volatility"),
+             ("dpo_var_5", "VaR 5% (daily)")],
+            f"new_metrics_risk_chart_{label}.png"
+            if label != "benchmark1" else "new_metrics_risk_chart.png",
+            f"Risk metrics — {label}")
 
-    # Turnover comparison across benchmarks
-    fig, ax = plt.subplots(figsize=(9, 4.5))
+    # Turnover comparison across benchmarks (single panel)
+    fig, ax = plt.subplots(figsize=(9.5, 5))
     width = 0.38
     labels = [m for m in MODEL_ORDER]
     for i, (label, df) in enumerate(benchmarks.items()):
@@ -455,36 +584,33 @@ def new_metrics_outputs(benchmarks: dict):
                 if (df["model"] == m).any() else np.nan for m in labels]
         ax.bar(np.arange(len(labels)) + i * width, vals, width, label=label)
     ax.set_xticks(np.arange(len(labels)) + width / 2)
-    ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8)
+    ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8.5)
     ax.set_ylabel("Avg one-way turnover per rebalance")
     ax.set_title("Turnover comparison (DPO)")
     ax.legend()
-    ax.grid(alpha=0.3, axis="y")
     finish(fig, "turnover_comparison.png")
 
-    # Gross vs TC-adjusted return
-    fig, ax = plt.subplots(figsize=(10, 4.8))
+    # Gross vs TC-adjusted return: one figure per benchmark.
     for i, (label, df) in enumerate(benchmarks.items()):
         if df is None:
             continue
+        fig, ax = plt.subplots(figsize=(9.5, 5))
         x = np.arange(len(labels))
         gross = [df.loc[df["model"] == m, "dpo_annualized_return"].squeeze()
                  if (df["model"] == m).any() else np.nan for m in labels]
         net = [df.loc[df["model"] == m, "dpo_tc_adjusted_annual_return"].squeeze()
                if (df["model"] == m).any() else np.nan for m in labels]
-        offset = -0.2 if i == 0 else 0.2
-        ax.bar(x + offset - 0.08, np.array(gross) * 100, 0.16,
-               label=f"{label} gross", alpha=0.9)
-        ax.bar(x + offset + 0.08, np.array(net) * 100, 0.16,
-               label=f"{label} net of 10 bps", alpha=0.6)
-    ax.set_xticks(np.arange(len(labels)))
-    ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8)
-    ax.set_ylabel("Annualized return (%)")
-    ax.set_title("Transaction-cost-adjusted return (DPO, 10 bps one-way)")
-    ax.axhline(0, color="black", linewidth=0.6)
-    ax.legend(fontsize=7)
-    ax.grid(alpha=0.3, axis="y")
-    finish(fig, "transaction_cost_adjusted_return.png")
+        ax.bar(x - 0.19, np.array(gross) * 100, 0.36, label="Gross")
+        ax.bar(x + 0.19, np.array(net) * 100, 0.36,
+               label="Net of 10 bps costs", alpha=0.75)
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8.5)
+        ax.set_ylabel("Annualized return (%)")
+        ax.set_title(f"Transaction-cost impact (DPO) — {label}")
+        ax.axhline(0, color="black", linewidth=0.6)
+        ax.legend()
+        finish(fig, "transaction_cost_adjusted_return.png" if label == "benchmark1"
+               else f"transaction_cost_adjusted_return_{label}.png")
 
 
 # ---------------------------------------------------------------------------
@@ -520,6 +646,7 @@ def main():
 
     stress_figures()
     tail_risk_figure()
+    robustness_figures()
 
     new_metrics_outputs({"benchmark1": bench1, "benchmark2": bench2})
 

@@ -239,12 +239,95 @@ cost, and produced transpilable circuit artifacts that make the
 hardware phase auditable. Every reported number is reproducible from a
 seeded, committed pipeline.*
 
-## 8. Reproduction
+## 8. Post-hoc additions: epoch extension, robustness checks, Qiskit stress, full circuits
+
+### 8.1 Extended epoch ladder (overfitting confirmed)
+
+| Epochs | 10 | 25 | 50 | 100 | 200 | 500 |
+|---|---|---|---|---|---|---|
+| DPO Sharpe | 0.96 | 2.31 | 2.67 | 2.76 | 2.75 | **2.55** |
+| DPO profit p.a. | 38% | 95% | 114% | 115% | 120% | 105% |
+
+Training past ~200 epochs *degrades* test performance — the 25–50 epoch
+budget is near-optimal, not merely cheap. The loss-curve figure
+(`epoch_plateau_loss_curve.png`) now shows the full 500-epoch run.
+
+### 8.2 Robustness / anti-artifact checks (`robustness_checks.csv`, `robustness_summary.csv`)
+
+Benchmark 1 configuration; figures `robustness_seed_distribution.png`,
+`walk_forward_folds.png`.
+
+| Check | Result (test DPO Sharpe) |
+|---|---|
+| PennyLane QDPG, 10 seeds | mean 2.78, std 1.50, range [0.74, 5.00] — headline seed 68 (0.84) is near the bottom of its own distribution |
+| Classical DDPG, 10 seeds | mean 3.20, std 0.42 (much tighter) |
+| Placebo: time-shuffled training data | 2.21 ± 0.59 — still "good" |
+| Untrained quantum actors (20 inits) | 2.83 ± 1.35 |
+| Random Dirichlet policies (2000) | median 3.04, p5–p95 [1.12, 4.56] |
+| Walk-forward, 10 folds 2016–2025 | EW 0.45±3.36, QDPG 0.13±2.07, DDPG 0.87±3.22 |
+
+**Interpretation (write this into the paper):** the Benchmark 1 test
+window is a calm bull market where *any* long-ish allocation scores a
+high Sharpe — trained models sit inside the random-policy null, and
+placebo/untrained baselines do "well". Single-window absolute Sharpe is
+therefore regime measurement, not evidence of learned skill. The claims
+that survive: (a) the framework-equivalence/parity results, (b) the
+turnover/cost profiles, (c) the stress-test risk profile (below) —
+where strategies genuinely separate — and (d) walk-forward regime
+dependence (QDPG has the lowest cross-fold variance but also the lowest
+mean; nothing dominates). This reframing is the robustness suite's
+central finding, not a weakness of the study.
+
+### 8.3 Qiskit stress-test rows (5-epoch budget, noted in table)
+
+COVID crash: Qiskit QDPG Sharpe **+0.60** / MDD 26.8% / CVaR 5.8%,
+Qiskit QQL +0.52 — confirming the PennyLane defensive result
+cross-framework. Bear 2022: Qiskit pair ≈ −1.24 (worse than PennyLane's
+−0.60/−0.65: the 5-epoch policies differ more; trajectory sensitivity,
+see 8.2). Calm 2024: Qiskit ≈ −0.27/−0.26. The COVID conclusion —
+quantum policies uniquely positive through the crash — holds in both
+frameworks; window-level rankings elsewhere remain budget/seed
+sensitive.
+
+### 8.4 All three circuit instances (`comparison_logs/circuits/`)
+
+One architecture, three sizes (same ansatz family everywhere — the
+benchmarks do NOT use different circuits, just different instance sizes):
+
+| Instance | Qubits | Features | Weights | Decomposed depth | CX |
+|---|---|---|---|---|---|
+| Benchmark 1 actor | 8 | 160 | 16 | 1,490 | 254 |
+| Benchmark 2 actor | 10 | 200 | 10 | 6,084 | 1,013 |
+| MAIN full config | 15 | 2,220 | 60 | 196,526 | 32,794 |
+
+State preparation (~2^n CX) dominates depth at every size; the
+variational part stays tiny. This is the quantitative core of the
+hardware-feasibility discussion.
+
+### 8.5 Figure inventory update (all figures ≤ 2 panels)
+
+Replacements: `stress_test_cumulative.png` → three single-window
+figures `stress_cumulative_{covid_crash_2020,bear_2022,calm_2024}.png`;
+`tail_risk_comparison.png` is now MDD+CVaR only, with worst-day/kurtosis
+in `tail_risk_shape.png`; benchmark metric grids split into
+`*_metrics_comparison.png` (Sharpe+CAGR) and `*_metrics_comparison_risk.png`;
+new-metrics 1x5 grids split into `new_metrics_bar_chart*` (returns) and
+`new_metrics_risk_chart*`; TC impact split per benchmark; sweep summary
+split into `parameter_sweep_summary.png` + `parameter_sweep_runtime.png`.
+New: `robustness_seed_distribution.png`, `walk_forward_folds.png`.
+
+## 9. Reproduction
 
 ```bash
 PY=original_pennylane/qrl-dpo-public/.venv/bin/python
-PYTHONPATH=. $PY -u qiskit_port/run_stress_and_tail_tests.py   # stress + tail (~ 4 min)
-PYTHONPATH=. $PY -u qiskit_port/generate_poster_plots.py       # all 20 figures
+PYTHONPATH=. $PY -u qiskit_port/run_stress_and_tail_tests.py     # PL/classical stress + tail (~4 min)
+PYTHONPATH=. $PY -u qiskit_port/run_stress_qiskit_extension.py   # Qiskit stress rows (~40 min)
+PYTHONPATH=. $PY -u qiskit_port/run_robustness_checks.py         # seed/placebo/null/walk-forward (~15 min)
+PYTHONPATH=. $PY -u qiskit_port/export_qiskit_paper_circuit.py   # all 3 circuit instances
+PYTHONPATH=. $PY -u qiskit_port/generate_poster_plots.py         # all 31 figures
 ```
+
+The 500-epoch sweep point is appended by re-running the epoch axis of
+`run_parameter_sweep.py` with `max_epochs=500, early_stopping=False`.
 
 (Benchmarks, sweep, parity: see TECHNICAL_DOCUMENTATION.md Section 17.)
