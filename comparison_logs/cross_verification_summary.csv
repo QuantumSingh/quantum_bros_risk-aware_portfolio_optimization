@@ -1,0 +1,7 @@
+pair,metric,pennylane,qiskit,abs_diff
+QDPG vs QDPG,sharpe,0.8402,1.1075,0.2673
+QDPG vs QDPG,annualized_return,0.2276,0.2848,0.0572
+QDPG vs QDPG,avg_turnover,0.8673,0.8426,0.0247
+Q-Learning vs Q-Learning,sharpe,0.9401,0.537,0.4031
+Q-Learning vs Q-Learning,annualized_return,0.2533,0.1535,0.0998
+Q-Learning vs Q-Learning,avg_turnover,0.8546,0.9359,0.0813
