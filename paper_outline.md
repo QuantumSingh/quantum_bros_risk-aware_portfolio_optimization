@@ -103,6 +103,10 @@ to the repo root.
 ### 6.4 Reinforcement Learning Policies
 - [ ] Actor/critic wiring, exploration noise, replay buffer, reward shaping,
       short-selling normalization activation.
+- [ ] Algorithm families covered by the team:
+      DDPG / Deep Q-Learning + quantum variants (this work);
+      TD3 / SAC + quantum variants QTD3 / QSAC (teammate 1).
+      State per-algorithm hyperparameters and which framework each ran in.
 
 ## 7. Experimental Setup
 
@@ -129,7 +133,16 @@ to the repo root.
 
 ### 7.4 Metrics
 - [ ] Repo metrics: annualized profit (1+mean)^252-1, Sharpe (rf=4.18%).
-- [ ] Teammate metrics: Calmar, max drawdown, Sortino, CVaR 5%.
+- [ ] Teammate-2 metrics: Calmar (done: 50 epochs, 1/4 original dataset,
+      single split), max drawdown, Sortino, CVaR 5% (due Monday), plus
+      loss curves on the earlier Qiskit port.
+      CONSISTENCY NOTE: teammate-2's config (50 epochs, 1/4 dataset)
+      differs from the headline benchmarks (25 epochs, trailing 240
+      rows); either recompute her metrics from the shared per-model
+      daily-return series in comparison_logs/series/*.npz (identical
+      evaluations, seconds of compute) or present as a separate
+      experiment with its own config table -- do not mix configs in one
+      results table.
 - [ ] New metrics (this work, `qiskit_port/portfolio_metrics.py`):
       annualized return (CAGR), annualized volatility, VaR 5%,
       average one-way turnover, transaction-cost-adjusted return (10 bps).
@@ -164,10 +177,30 @@ to the repo root.
       with high turnover (~1.0 one-way), so transaction costs bite; EW/MVO
       barely trade.
 
-### 8.6 Runtime Analysis
+### 8.6 Extended Algorithm Families: TD3, QTD3, SAC, QSAC (teammate 1)
+- [ ] Metrics/results for the four additional agents; state the exact
+      config (dataset slice, epochs, seed, framework) alongside ours.
+- [ ] If configs align with Benchmark 1, merge into the main table;
+      otherwise present as a separate table with its own config row.
+- [ ] Apply the same robustness caveat (single calm window sits inside
+      the random-policy null) unless multi-seed/stress runs exist.
+
+### 8.7 Teammate-2 Metrics and Legacy Loss Curves
+- [ ] Calmar / max drawdown / Sortino / CVaR 5% results (due Monday).
+- [ ] VERIFY which code version produced the loss curves: they were run
+      on the older Qiskit port, which predates the parity fixes (input
+      gradients, 1-D calling convention, per-occurrence parameter
+      shifts). Either re-run on the validated port (fast via
+      qiskit_port/run_training_loss_curves.py) or label as legacy-port
+      curves and do not compare directly against the validated model's.
+
+### 8.8 Runtime Analysis
 - [ ] PennyLane backprop vs Qiskit parameter-shift + finite-difference:
       per-epoch cost ratios per benchmark; where the Qiskit time goes
       (state preparation decomposition, gradient evaluation counts).
+- [ ] Use `paper/runtime_analysis.tex` (single-run vs 10-seed table +
+      measurement-uncertainty caveat; only order-of-magnitude ratios
+      are claimed).
 
 ## 9. Discussion
 
