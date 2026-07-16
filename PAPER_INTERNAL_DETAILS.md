@@ -316,6 +316,87 @@ new-metrics 1x5 grids split into `new_metrics_bar_chart*` (returns) and
 split into `parameter_sweep_summary.png` + `parameter_sweep_runtime.png`.
 New: `robustness_seed_distribution.png`, `walk_forward_folds.png`.
 
+## 8b. Verification & Diagnostics (stability, jaggedness, cross-framework)
+
+Three additional studies address code stability, the origin of loss-curve
+jaggedness, and cross-implementation consistency.
+
+### 8b.1 Statistical stability & reproducibility
+(`run_stability_tests.py` -> `stability_reproducibility.csv`,
+`stability_seeds.csv`, `stability_summary.csv/.tex`,
+`plots/stability_seed_boxplot.png`)
+
+- **Reproducibility (determinism): PASS.** Each model trained twice at
+  seed 68 gives a bit-identical test Sharpe (|diff| = 0.0e0): Classical
+  DDPG 3.150824, Classical DQL -0.974783, PennyLane QDPG 0.840228,
+  PennyLane QQL 0.940100. Same seed -> same result, for every team member.
+- **Stability across 5 seeds** (coefficient of variation CV = std/|mean|):
+
+  | Model | Sharpe mean | std | CV | 95% CI half-width | min..max |
+  |---|---|---|---|---|---|
+  | Classical DDPG | 3.04 | 0.58 | **0.19** | 0.72 | 2.06..3.53 |
+  | Classical Deep Q-Learning | 1.07 | 1.99 | **1.87** | 2.48 | -0.98..3.13 |
+  | PennyLane QDPG | 3.20 | 1.62 | **0.51** | 2.01 | 0.84..5.00 |
+  | PennyLane Quantum Q-Learning | 2.79 | 1.25 | **0.45** | 1.55 | 0.94..4.12 |
+
+  Interpretation: three of four models have CV > 0.4, so a single-seed
+  Sharpe is NOT representative; Classical DQL is especially unstable
+  (CV 1.87, sign-changing across seeds). This is the quantitative backing
+  for reporting multi-seed distributions rather than single numbers, and
+  it is consistent with the random-policy-null finding (Section 8.2): in
+  this calm window, seed variance swamps model differences.
+
+### 8b.2 Why the loss curves are jagged
+(`run_internal_diagnostics.py` -> `internal_diagnostics.csv`,
+`internal_diagnostics_summary.csv`,
+`plots/internal_diagnostics.png`, `plots/internal_jaggedness_drivers.png`)
+
+An instrumented, faithful replica of the DDPG update loop logs every
+internal quantity at every training window (not per-epoch). Findings:
+
+- The **per-epoch average critic loss is smooth** (0.213 -> 0.170 over 6
+  epochs) while the **per-window critic loss is jagged** (0.16..0.24) —
+  the jaggedness is intra-epoch noise that only partly averages out.
+- The **reward is dominated by the volatility term** (risk_pref *
+  volatility, rho = -0.93), not the profit term. Each window has
+  different market volatility and a freshly redrawn exploration noise, so
+  the training signal is inherently noisy. The heavy volatility penalty
+  that produces the DEFENSIVE policy is the same mechanism that makes
+  training jagged.
+- Critic-loss magnitude correlates most with the **critic's own
+  prediction** Q(s,a) (corr 0.90), then the moving target |target Q|
+  (0.13) and exploration-noise magnitude (0.11). Measured, not assumed.
+- Structural amplifiers (design of the repo trainer): single-sample
+  replay (each update uses one sampled transition), exploration noise
+  redrawn per window, and no target network (soft_update=False), so the
+  critic chases a target that moves every step.
+
+### 8b.3 Cross-framework verification
+(`run_cross_verification.py` -> `cross_verification_summary.csv/.tex`,
+`plots/cross_verification_loss.png`)
+
+Two distinct levels of agreement, to be reported separately:
+
+- **Per-call parity: EXACT** (~1.2e-7 forward, ~3.6e-7 gradients, from the
+  30-config parity suite). The two implementations are equivalent per
+  call.
+- **Trajectory agreement: tracks then diverges.** Trained on the same
+  seed and data, PennyLane and Qiskit QDPG loss curves overlay for ~70
+  epochs, then Qiskit shows late critic-loss spikes PennyLane does not.
+  Final trained metrics differ despite exact per-call parity:
+
+  | Pair | Metric | PennyLane | Qiskit | abs diff |
+  |---|---|---|---|---|
+  | QDPG | Sharpe | 0.840 | 1.107 | 0.267 |
+  | QDPG | ann. return | 0.228 | 0.285 | 0.057 |
+  | Q-Learning | Sharpe | 0.940 | 0.537 | 0.403 |
+
+  This is expected chaotic amplification of float32-level per-call
+  differences across thousands of noise-injected, replay-sampled updates
+  — NOT a parity failure. **Team guidance:** verify per-call parity
+  (exact) separately from trained trajectories (chaotic); a Sharpe
+  difference between frameworks on a trained model is expected, not a bug.
+
 ## 9. Reproduction
 
 ```bash
@@ -324,7 +405,10 @@ PYTHONPATH=. $PY -u qiskit_port/run_stress_and_tail_tests.py     # PL/classical 
 PYTHONPATH=. $PY -u qiskit_port/run_stress_qiskit_extension.py   # Qiskit stress rows (~40 min)
 PYTHONPATH=. $PY -u qiskit_port/run_robustness_checks.py         # seed/placebo/null/walk-forward (~15 min)
 PYTHONPATH=. $PY -u qiskit_port/export_qiskit_paper_circuit.py   # all 3 circuit instances
-PYTHONPATH=. $PY -u qiskit_port/generate_poster_plots.py         # all 31 figures
+PYTHONPATH=. $PY -u qiskit_port/generate_poster_plots.py         # all figures
+PYTHONPATH=. $PY -u qiskit_port/run_stability_tests.py           # determinism + 5-seed stability (~10 min)
+PYTHONPATH=. $PY -u qiskit_port/run_internal_diagnostics.py      # per-window internals / jaggedness (~1 min)
+PYTHONPATH=. $PY -u qiskit_port/run_cross_verification.py        # PL vs Qiskit trajectory (seconds)
 ```
 
 The 500-epoch sweep point is appended by re-running the epoch axis of
