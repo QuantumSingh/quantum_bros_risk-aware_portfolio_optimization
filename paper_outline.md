@@ -18,7 +18,23 @@ to the repo root.
 
 - [ ] Motivation: reproducibility and framework portability in QML finance.
 - [ ] Why Qiskit: hardware access (IonQ), ecosystem, verification value.
-- [ ] Contributions list (bulleted, mirrors abstract).
+- [ ] Contributions list — FOUR PILLARS (the conversion is the foundation,
+      not the whole contribution; frame accordingly):
+      1. Validated cross-framework port: 30-config parity suite to ~1e-7,
+         audit findings (endianness, classical_layers, batching),
+         hardware-realistic gradient training at quantified ~100x cost.
+      2. Comprehensive benchmarking: 8 models x 2 datasets (incl. a new
+         zero-overlap 10-ticker universe), five added economic metrics
+         (CAGR, volatility, VaR 5%, turnover, TC-adjusted return),
+         runtime analysis with measurement uncertainty.
+      3. Risk characterization: historical stress tests (COVID crash /
+         2022 bear / calm control), full tail-risk suite (CVaR 1%/5%,
+         max drawdown, worst day/week, kurtosis, time under water),
+         the defensive-quantum-policy finding.
+      4. Anti-artifact rigor: multi-seed distributions, shuffled-data
+         placebo, 2000-draw random-policy null, untrained-actor
+         baselines, 10-fold walk-forward, epoch sweeps to 500 with
+         overfitting onset, full loss-curve analysis.
 
 ## 3. Background
 
