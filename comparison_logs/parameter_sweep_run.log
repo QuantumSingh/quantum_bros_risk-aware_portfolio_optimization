@@ -1,0 +1,257 @@
+
+================================================================================
+SWEEP RUN rows_120: dataset=original_paper_subset, rows=120, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=50, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 120 rows) ---
+dataset: original_paper_subset (4 assets, 120 rows)
+shape: (120, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2025-03-11 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0010119141463048949
+std_return: 0.017340035743415128
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (72, 4), val (24, 4), test (24, 4)
+epochs 50/50, train 11.6s, DPO profit 131.82%, sharpe 3.458
+
+================================================================================
+SWEEP RUN rows_240: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=50, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+epochs 24/50 (early stop), train 11.8s, DPO profit 87.04%, sharpe 2.189
+
+================================================================================
+SWEEP RUN rows_600: dataset=original_paper_subset, rows=600, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=50, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 600 rows) ---
+dataset: original_paper_subset (4 assets, 600 rows)
+shape: (600, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2023-04-11 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0006466792471249846
+std_return: 0.012598803231614901
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (360, 4), val (120, 4), test (120, 4)
+epochs 19/50 (early stop), train 22.6s, DPO profit -10.73%, sharpe -0.481
+
+================================================================================
+SWEEP RUN rows_1768: dataset=original_paper_subset, rows=1768, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=50, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 1768 rows) ---
+dataset: original_paper_subset (4 assets, 1768 rows)
+shape: (1768, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2018-08-17 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.14233504372557348
+max_return: 0.14261761513216165
+mean_return: 0.0004997131740884131
+std_return: 0.01490542843795236
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (1060, 4), val (354, 4), test (354, 4)
+epochs 12/50 (early stop), train 42.5s, DPO profit 4.55%, sharpe 0.011
+
+================================================================================
+SWEEP RUN lookback_10: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=10, num_weights=8, batch_size=1, max_epochs=50, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+epochs 50/50, train 8.3s, DPO profit 141.48%, sharpe 4.904
+
+================================================================================
+SWEEP RUN epochs_10_noES: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=10, early_stopping=False, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+epochs 10/10, train 4.3s, DPO profit 37.98%, sharpe 0.955
+
+================================================================================
+SWEEP RUN epochs_25_noES: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=25, early_stopping=False, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+epochs 25/25, train 10.0s, DPO profit 95.28%, sharpe 2.308
+
+================================================================================
+SWEEP RUN epochs_50_noES: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=50, early_stopping=False, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+epochs 50/50, train 20.1s, DPO profit 114.40%, sharpe 2.673
+
+================================================================================
+SWEEP RUN epochs_100_noES: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=100, early_stopping=False, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+epochs 100/100, train 40.8s, DPO profit 115.01%, sharpe 2.756
+
+================================================================================
+SWEEP RUN epochs_100_ES: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=5, num_weights=8, batch_size=1, max_epochs=100, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+epochs 24/100 (early stop), train 11.0s, DPO profit 87.04%, sharpe 2.189
+
+================================================================================
+SWEEP RUN assets_10_custom: dataset=custom_nonpaper_10, rows=240, num_assets=10, lookback_window=5, num_weights=10, batch_size=1, max_epochs=50, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: custom_nonpaper_10 (240 rows) ---
+dataset: custom_nonpaper_10 (240 rows)
+shape: (240, 10)
+columns: ['NVDA', 'AMD', 'TSLA', 'AMZN', 'META', 'NFLX', 'COST', 'UNH', 'BA', 'KO']
+start_date: 2025-07-21 00:00:00
+end_date: 2026-07-02 00:00:00
+min_return: -0.19605278307960639
+max_return: 0.23708027557556832
+mean_return: 0.0009545572621459553
+std_return: 0.02442930970219152
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 10), val (48, 10), test (48, 10)
+epochs 50/50, train 29.2s, DPO profit 3646.65%, sharpe 3.498
+
+================================================================================
+SWEEP RUN batch_4_probe: dataset=original_paper_subset, rows=240, num_assets=4, lookback_window=5, num_weights=8, batch_size=4, max_epochs=2, early_stopping=True, patience=5, min_delta=0.0001
+================================================================================
+
+--- Data validation: original_paper_subset (4 assets, 240 rows) ---
+dataset: original_paper_subset (4 assets, 240 rows)
+shape: (240, 4)
+columns: ['AAPL', 'EFA', 'GLD', 'IWM']
+start_date: 2024-09-16 00:00:00
+end_date: 2025-08-29 00:00:00
+min_return: -0.09701351036916162
+max_return: 0.14261761513216165
+mean_return: 0.0005964860646363016
+std_return: 0.014725782656682158
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 4), val (48, 4), test (48, 4)
+RUN FAILED: FAILED: ValueError: Provided tensor has shape torch.Size([320]), but input size is configured to 80
+
+================================================================================
+              run_id                dataset  rows  assets  lookback_window  num_weights  batch_size  max_epochs  early_stopping  epochs_completed early_stopping_triggered  final_actor_loss  final_critic_loss  final_val_critic_loss  runtime_seconds  spo_profit_pa  spo_sharpe  dpo_profit_pa  dpo_sharpe  dpo_annualized_return  dpo_annualized_volatility  dpo_var_5  dpo_avg_turnover  dpo_tc_adjusted_annual_return                                                                                               status
+0           rows_120  original_paper_subset   120       4                5            8           1          50            True              50.0                    False          0.009422           0.010053               0.001066        11.579800       0.988214    2.737778       1.318161    3.458078               1.257283                   0.231452   0.012341          0.558443                       1.205088                                                                                                   ok
+1           rows_240  original_paper_subset   240       4                5            8           1          50            True              24.0                     True          0.013085           0.004483               0.001749        11.778507       0.843384    1.904892       0.870440    2.188908               0.805614                   0.267326   0.018045          0.972703                       0.725201                                                                                                   ok
+2           rows_600  original_paper_subset   600       4                5            8           1          50            True              19.0                     True         -0.020372           0.004374               0.002094        22.554993       0.200394    0.426128      -0.107282   -0.481485              -0.152705                   0.322459   0.028308          0.471115                      -0.171827                                                                                                   ok
+3          rows_1768  original_paper_subset  1768       4                5            8           1          50            True              12.0                     True          0.000654           0.004719               0.001237        42.479399       0.153993    0.382830       0.045452    0.011021               0.015601                   0.240720   0.025135          0.442687                      -0.006491                                                                                                   ok
+4        lookback_10  original_paper_subset   240       4               10            8           1          50            True              50.0                    False          0.206508           0.037414               0.017888         8.264907       1.108778    3.432958       1.414766    4.904144               1.379950                   0.171558   0.009190          0.648872                       1.348188                                                                                                   ok
+5     epochs_10_noES  original_paper_subset   240       4                5            8           1          10           False              10.0                    False          0.073589           0.022227                    NaN         4.348260       0.837181    3.074402       0.379830    0.955448               0.321851                   0.293439   0.016191          1.080483                       0.255887                                                                                                   ok
+6     epochs_25_noES  original_paper_subset   240       4                5            8           1          25           False              25.0                    False          0.013937           0.004437                    NaN        10.020374       0.850968    1.939311       0.952753    2.308248               0.882728                   0.272211   0.018015          1.015964                       0.795338                                                                                                   ok
+7     epochs_50_noES  original_paper_subset   240       4                5            8           1          50           False              50.0                    False          0.014562           0.005721                    NaN        20.138474       1.025719    2.284782       1.144011    2.673421               1.068398                   0.270078   0.015278          0.943952                       0.979238                                                                                                   ok
+8    epochs_100_noES  original_paper_subset   240       4                5            8           1         100           False             100.0                    False          0.034973           0.003745                    NaN        40.806407       1.041534    2.356669       1.150087    2.756493               1.078112                   0.262969   0.015061          0.914724                       0.991201                                                                                                   ok
+9      epochs_100_ES  original_paper_subset   240       4                5            8           1         100            True              24.0                     True          0.013085           0.004483               0.001749        10.984638       0.843384    1.904892       0.870440    2.188908               0.805614                   0.267326   0.018045          0.972703                       0.725201                                                                                                   ok
+10  assets_10_custom     custom_nonpaper_10   240      10                5           10           1          50            True              50.0                    False         -0.012015           0.009163               0.001964        29.240546       5.193236    3.577365      36.466474    3.497556              21.237308                   1.031526   0.096964          1.319257                      19.950999                                                                                                   ok
+11     batch_4_probe  original_paper_subset   240       4                5            8           4           2            True               NaN                     None               NaN                NaN                    NaN              NaN            NaN         NaN            NaN         NaN                    NaN                        NaN        NaN               NaN                            NaN  FAILED: ValueError: Provided tensor has shape torch.Size([320]), but input size is configured to 80
+
+Saved: /Users/harkeeratsingh/quantum_bros_risk-aware_portfolio_optimization/comparison_logs/parameter_sweep_results.csv and /Users/harkeeratsingh/quantum_bros_risk-aware_portfolio_optimization/comparison_logs/parameter_sweep_results.tex

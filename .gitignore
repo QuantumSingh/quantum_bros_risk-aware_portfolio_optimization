@@ -1,0 +1,11 @@
+**/.venv/
+**/__pycache__/
+**/results_logs/
+**/run_log.txt
+**/data/*.parquet.gzip
+**/*_original.py
+**/*_original.txt
+**/qnn_search.txt
+**/*_original.py
+**/*_original.txt
+**/qnn_search.txt

@@ -1,0 +1,32 @@
+Starting exact-amplitude Qiskit QDPG smoke test...
+Original code path: /Users/harkeeratsingh/quantum_bros_risk-aware_portfolio_optimization/original_pennylane/qrl-dpo-public
+Using predictor: <class 'qiskit_port.qiskit_exact_amplitude_finite_diff_qnn.QiskitExactAmplitudeFiniteDiffQNN'>
+radial_to_linear: <function radial_to_linear at 0x1618b7d80>
+Full price_data shape: (3536, 15)
+Smoke-test price_data shape: (120, 4)
+Smoke-test tickers: ['AAPL', 'EFA', 'GLD', 'IWM']
+Train shape: (72, 4)
+Val shape: (24, 4)
+Test shape: (24, 4)
+Training exact-amplitude Qiskit QDPG...
+Epoch 1/1, Actor Loss: 0.2820352697, Critic Loss: 0.0312050168
+Evaluating exact-amplitude Qiskit QDPG...
+
+Portfolio Allocation (SPO):
+AAPL       -33.90 %
+EFA        93.21 %
+GLD        70.15 %
+IWM        -29.45 %
+
+Profit p.a. (SPO): 9.9239 %
+Sharpe Ratio (SPO): 0.3609
+
+Performing dynamic portfolio optimization over 5 intervals...
+
+ |------------------------------| 0.0%  [Elapsed: 0 seconds] |██████------------------------| 20.0%  [Elapsed: 0 seconds] |████████████------------------| 40.0%  [Elapsed: 0 seconds] |██████████████████------------| 60.0%  [Elapsed: 0 seconds] |████████████████████████------| 80.0%  [Elapsed: 0 seconds] |██████████████████████████████| 100.0%  [Elapsed: 0 seconds]
+
+Profit p.a. (DPO): 244.0040 %
+Sharpe Ratio (DPO): 4.4528
+
+Exact-amplitude Qiskit QDPG smoke-test results:
+((np.float64(0.09923948229732837), np.float64(0.3608594523647276)), (np.float64(2.4400401211623097), np.float64(4.452791277868839)))

@@ -1,0 +1,6 @@
+quantity,corr_with_critic_loss
+q_value,0.901
+abs_target_q,0.126
+noise_l2,0.111
+alloc_spread,-0.104
+abs_reward,0.074

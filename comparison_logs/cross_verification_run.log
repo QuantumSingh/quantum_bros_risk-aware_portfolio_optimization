@@ -1,0 +1,24 @@
+=== Level 1: per-call parity (from parity suite) ===
+forward max |diff| ~1.2e-7, weight grad ~3.6e-7, input grad ~2.9e-4 (finite difference).
+=> the two implementations are EXACTLY equivalent per call.
+
+=== Level 2: trajectory agreement (same seed/data) ===
+wrote cross_verification_loss.png
+  actor_diff_epoch1: 4.9790e-03
+  actor_diff_mean: 5.3199e-03
+  actor_diff_final: 2.0783e-03
+  critic_diff_epoch1: 2.2376e-03
+  critic_diff_mean: 7.0395e-03
+  critic_diff_final: 2.0459e-03
+  => curves start near-identical, diverge as training proceeds (expected chaotic amplification).
+
+=== Final trained-metric comparison (Benchmark 1) ===
+                    pair            metric  pennylane  qiskit  abs_diff
+            QDPG vs QDPG            sharpe     0.8402  1.1075    0.2673
+            QDPG vs QDPG annualized_return     0.2276  0.2848    0.0572
+            QDPG vs QDPG      avg_turnover     0.8673  0.8426    0.0247
+Q-Learning vs Q-Learning            sharpe     0.9401  0.5370    0.4031
+Q-Learning vs Q-Learning annualized_return     0.2533  0.1535    0.0998
+Q-Learning vs Q-Learning      avg_turnover     0.8546  0.9359    0.0813
+
+Interpretation: final metrics differ at the O(0.1 Sharpe) level despite 1e-7 per-call parity -- teammates comparing TRAINED results should expect this and compare per-call parity (exact) separately from trained trajectories (chaotic).

@@ -1,0 +1,5 @@
+model,run1_sharpe,run2_sharpe,abs_diff_sharpe,abs_diff_ann_return,deterministic
+Classical DDPG,3.1508236019654365,3.1508236019654365,0.0,0.0,True
+Classical Deep Q-Learning,-0.974783230121115,-0.974783230121115,0.0,0.0,True
+PennyLane QDPG,0.8402280825569075,0.8402280825569075,0.0,0.0,True
+PennyLane Quantum Q-Learning,0.9400999432952523,0.9400999432952523,0.0,0.0,True

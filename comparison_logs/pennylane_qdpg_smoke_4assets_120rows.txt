@@ -1,0 +1,32 @@
+Starting PennyLane QDPG smoke baseline...
+Original code path: /Users/harkeeratsingh/quantum_bros_risk-aware_portfolio_optimization/original_pennylane/qrl-dpo-public
+Using predictor: <class 'predictors.quantum_neural_network.QuantumNeuralNetwork'>
+radial_to_linear: <function radial_to_linear at 0x13cab7d80>
+Full price_data shape: (3536, 15)
+Smoke-test price_data shape: (120, 4)
+Smoke-test tickers: ['AAPL', 'EFA', 'GLD', 'IWM']
+Train shape: (72, 4)
+Val shape: (24, 4)
+Test shape: (24, 4)
+Training PennyLane QDPG baseline...
+Epoch 1/1, Actor Loss: 0.2694181714, Critic Loss: 0.0244426427
+Evaluating PennyLane QDPG baseline...
+
+Portfolio Allocation (SPO):
+AAPL       -24.81 %
+EFA        86.46 %
+GLD        63.16 %
+IWM        -24.81 %
+
+Profit p.a. (SPO): 16.1410 %
+Sharpe Ratio (SPO): 0.8513
+
+Performing dynamic portfolio optimization over 5 intervals...
+
+ |------------------------------| 0.0%  [Elapsed: 0 seconds] |██████------------------------| 20.0%  [Elapsed: 0 seconds] |████████████------------------| 40.0%  [Elapsed: 0 seconds] |██████████████████------------| 60.0%  [Elapsed: 0 seconds] |████████████████████████------| 80.0%  [Elapsed: 0.01 seconds] |██████████████████████████████| 100.0%  [Elapsed: 0.01 seconds]
+
+Profit p.a. (DPO): 240.2511 %
+Sharpe Ratio (DPO): 4.9606
+
+PennyLane QDPG smoke baseline results:
+((np.float64(0.16140989262080052), np.float64(0.8513453194291711)), (np.float64(2.402511106729104), np.float64(4.960618472659358)))
