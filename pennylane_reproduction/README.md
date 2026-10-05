@@ -59,7 +59,7 @@ expanding-window cross-validation.
 | **Early stopping** | **on, patience 10** (Appx. A.1) | **off for every model** | **no** |
 | **Soft target-network updates** | **τ = 0.005** (Appx. A.1) | **off for DDPG and QDPG** | **no** |
 | DQN action samples / replay buffer | 10 / unlimited (Appx. A.1) | 10 / unlimited | yes |
-| Quantum model size | 30 or 60 parameters (§4.3) | 60 weights on 15 qubits | yes (60) |
+| Quantum model size | 30 or 60 parameters (§4.3) | 60 weights (actor 15 qubits, critic 12) | yes (60) |
 | Optimizer | tuned over {Adam, SGD} (Appx. A.2) | SGD (quantum, DDPG), Adam (DQN) | consistent |
 | Learning rates, L2, risk preference, γ | tuned within ranges (Appx. A.2) | fixed values, all inside those ranges | consistent |
 | Transaction costs in the Sharpe ratio | 0.15% per trade (§4.2) | none | no |
@@ -75,12 +75,19 @@ mismatches are the fixed settings: early stopping and soft updates.
 | Model | Network | Optimizer | Actor lr | Critic lr | L2 | Risk pref. | γ |
 |---|---|---|---|---|---|---|---|
 | DDPG | MLP, 30 hidden units (34,306 params) | SGD | 0.02024 | 0.01425 | 9.59e-3 | −0.2832 | 0.02860 |
-| QDPG | VQC, 60 weights, 15 qubits | SGD | 0.09936 | 0.00180 | 3.21e-6 | −0.9286 | 0.009827 |
+| QDPG | VQC, 60 weights (actor 15 qubits, critic 12) | SGD | 0.09936 | 0.00180 | 3.21e-6 | −0.9286 | 0.009827 |
 | Deep Q-Learning | MLP, 30 hidden units | Adam | 0.00114 | 0.00399 | 5.72e-3 | −0.8135 | 0.04711 |
-| Quantum Q-Learning | VQC, 60 weights, 15 qubits | SGD | 0.09488 | 0.00116 | 5.03e-5 | −0.1201 | 0.001218 |
+| Quantum Q-Learning | VQC, 60 weights (actor 15 qubits, critic 12) | SGD | 0.09488 | 0.00116 | 5.03e-5 | −0.1201 | 0.001218 |
 
 Each model's state has 15 assets × (30 + 7) days = 555 features. The quantum
-models expand this to 2,220 features and amplitude-encode them on 15 qubits.
+actor expands this to 2,220 features and amplitude-encodes them on 15 qubits
+(4 rotation passes of its 60 weights). The quantum critic also sees the 15
+portfolio weights (570 inputs, 2,280 features) and uses 12 qubits (5 passes).
+Both use RY rotations with reverse-linear CNOT entanglement.
+
+Defaults the trainers use without `MAIN.py` setting them: exploration noise
+0.2, soft-update τ 0.005 (only active when soft updates are on), early-stopping
+`min_delta` 0, and no L1 or weight decay.
 
 ## 3. Runs
 
