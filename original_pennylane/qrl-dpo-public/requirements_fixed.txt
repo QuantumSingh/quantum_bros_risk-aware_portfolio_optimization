@@ -24,4 +24,5 @@ scipy==1.14.1
 torch==2.6.0
 tqdm==4.67.1
 urllib3==2.2.3
-yfinance==0.2.65autoray==0.6.12
+yfinance==0.2.65
+autoray==0.6.12
