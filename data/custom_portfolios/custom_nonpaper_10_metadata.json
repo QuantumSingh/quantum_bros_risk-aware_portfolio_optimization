@@ -1,0 +1,40 @@
+{
+  "universe_name": "custom_nonpaper_10",
+  "description": "Custom 10-asset benchmark universe with zero overlap with the original paper dataset. Mega-cap tech/semis (NVDA, AMD, AMZN, META, NFLX, TSLA), defensives (COST, UNH, KO), and industrials (BA).",
+  "source": "Yahoo Finance via yfinance",
+  "content": "adjusted close prices (NOT returns; apply pct_change before modeling)",
+  "requested_start_date": "2015-01-01",
+  "requested_end_date": null,
+  "actual_start_date_after_cleaning": "2015-01-02 00:00:00",
+  "actual_end_date_after_cleaning": "2026-07-02 00:00:00",
+  "tickers_requested": [
+    "NVDA",
+    "AMD",
+    "TSLA",
+    "AMZN",
+    "META",
+    "NFLX",
+    "COST",
+    "UNH",
+    "BA",
+    "KO"
+  ],
+  "tickers_downloaded": [
+    "NVDA",
+    "AMD",
+    "TSLA",
+    "AMZN",
+    "META",
+    "NFLX",
+    "COST",
+    "UNH",
+    "BA",
+    "KO"
+  ],
+  "paper_ticker_overlap": [],
+  "num_rows": 2891,
+  "num_assets": 10,
+  "auto_adjust": true,
+  "parquet_file": "data/custom_portfolios/custom_nonpaper_10_prices.parquet.gzip",
+  "csv_file": "data/custom_portfolios/custom_nonpaper_10_prices.csv"
+}

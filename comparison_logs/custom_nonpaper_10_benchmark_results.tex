@@ -1,0 +1,14 @@
+\begin{tabular}{llllrrrrrrrrl}
+\toprule
+model & framework & algorithm & dataset & dpo_profit_pa & dpo_sharpe & dpo_annualized_return & dpo_annualized_volatility & dpo_var_5 & dpo_avg_turnover & dpo_tc_adjusted_annual_return & runtime_seconds & notes \\
+\midrule
+Equal Weight & PyTorch & Naive baseline & custom_nonpaper_10 & 0.3597 & 1.3703 & 0.3344 & 0.1938 & 0.0179 & 0.0000 & 0.3344 & 0.0001 & static 1/N allocation \\
+Mean Variance Optimization & PyTorch & Convex optimization & custom_nonpaper_10 & 1.1239 & 1.5487 & 0.9104 & 0.4601 & 0.0455 & 3.0718 & 0.8808 & 0.4812 & DPO re-optimized every 30 days \\
+Classical DDPG & PyTorch & DDPG & custom_nonpaper_10 & 0.5227 & 1.5654 & 0.4788 & 0.2421 & 0.0200 & 0.0095 & 0.4782 & 4.4424 & epochs=14/25 (early stop); DPO rebalance every 5 days \\
+Classical Deep Q-Learning & PyTorch & Deep Q-Learning & custom_nonpaper_10 & 3.4963 & 2.3742 & 2.7156 & 0.6175 & 0.0695 & 0.0408 & 2.7085 & 0.2217 & epochs=8/25 (early stop); DPO rebalance every 5 days \\
+PennyLane QDPG & PennyLane & DDPG & custom_nonpaper_10 & 55.5848 & 3.6360 & 30.1064 & 1.1074 & 0.0992 & 1.3547 & 28.2585 & 14.6784 & epochs=25/25; DPO rebalance every 5 days \\
+PennyLane Quantum Q-Learning & PennyLane & Deep Q-Learning & custom_nonpaper_10 & 65.2333 & 3.5450 & 32.5274 & 1.1809 & 0.1078 & 1.3726 & 30.5176 & 34.2847 & epochs=25/25; DPO rebalance every 5 days \\
+Qiskit QDPG & Qiskit & DDPG & custom_nonpaper_10 & 42.3046 & 3.5694 & 24.2218 & 1.0519 & 0.0875 & 1.4800 & 22.5848 & 2424.8950 & epochs=5/5; reduced Qiskit epoch budget (parity-verified vs PennyLane); DPO rebalance every 5 days \\
+Qiskit Quantum Q-Learning & Qiskit & Deep Q-Learning & custom_nonpaper_10 & 38.3754 & 3.5236 & 22.2464 & 1.0382 & 0.0860 & 1.4581 & 20.7589 & 3231.4050 & epochs=5/5; reduced Qiskit epoch budget (parity-verified vs PennyLane); DPO rebalance every 5 days \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,96 @@
+Benchmark 2 config:
+  dataset_name: custom_nonpaper_10
+  rows: 240
+  num_assets: 10
+  lookback_window: 5
+  forecast_window: 0
+  num_weights: 10
+  max_epochs: 25
+  qiskit_max_epochs: 5
+  early_stopping: True
+  patience: 5
+  min_delta: 0.0001
+  seed: 68
+  short_selling: True
+  clamp_negatives: True
+
+--- Data validation: custom_nonpaper_10 (240 rows) ---
+dataset: custom_nonpaper_10 (240 rows)
+shape: (240, 10)
+columns: ['NVDA', 'AMD', 'TSLA', 'AMZN', 'META', 'NFLX', 'COST', 'UNH', 'BA', 'KO']
+start_date: 2025-07-21 00:00:00
+end_date: 2026-07-02 00:00:00
+min_return: -0.19605278307960639
+max_return: 0.23708027557556832
+mean_return: 0.0009545572621459553
+std_return: 0.02442930970219152
+num_nan: 0
+num_inf: 0
+Validation OK.
+Split: train (144, 10), val (48, 10), test (48, 10)
+
+================================================================================
+Running: Equal Weight
+================================================================================
+Runtime: 0.0s
+SPO profit p.a.: 35.97%  sharpe 1.370
+DPO profit p.a.: 35.97%  sharpe 1.370
+DPO turnover: 0.0000  TC-adj return: 33.44%
+
+================================================================================
+Running: Mean Variance Optimization
+================================================================================
+Runtime: 0.5s
+SPO profit p.a.: 243.30%  sharpe 5.234
+DPO profit p.a.: 112.39%  sharpe 1.549
+DPO turnover: 3.0718  TC-adj return: 88.08%
+
+================================================================================
+Running: Classical DDPG
+================================================================================
+Runtime: 4.4s
+SPO profit p.a.: 52.29%  sharpe 1.565
+DPO profit p.a.: 52.27%  sharpe 1.565
+DPO turnover: 0.0095  TC-adj return: 47.82%
+
+================================================================================
+Running: Classical Deep Q-Learning
+================================================================================
+Runtime: 0.2s
+SPO profit p.a.: 362.68%  sharpe 2.376
+DPO profit p.a.: 349.63%  sharpe 2.374
+DPO turnover: 0.0408  TC-adj return: 270.85%
+
+================================================================================
+Running: PennyLane QDPG
+================================================================================
+Runtime: 14.7s
+SPO profit p.a.: 623.18%  sharpe 3.452
+DPO profit p.a.: 5558.48%  sharpe 3.636
+DPO turnover: 1.3547  TC-adj return: 2825.85%
+
+================================================================================
+Running: PennyLane Quantum Q-Learning
+================================================================================
+Runtime: 34.3s
+SPO profit p.a.: 685.94%  sharpe 3.441
+DPO profit p.a.: 6523.33%  sharpe 3.545
+DPO turnover: 1.3726  TC-adj return: 3051.76%
+
+================================================================================
+Running: Qiskit QDPG
+================================================================================
+Runtime: 2424.9s
+SPO profit p.a.: 571.45%  sharpe 3.364
+DPO profit p.a.: 4230.46%  sharpe 3.569
+DPO turnover: 1.4800  TC-adj return: 2258.48%
+
+================================================================================
+Running: Qiskit Quantum Q-Learning
+================================================================================
+Runtime: 3231.4s
+SPO profit p.a.: 552.27%  sharpe 3.343
+DPO profit p.a.: 3837.54%  sharpe 3.524
+DPO turnover: 1.4581  TC-adj return: 2075.89%
+
+Saved: custom_nonpaper_10_benchmark_results.csv custom_nonpaper_10_benchmark_results.tex custom_nonpaper_10_benchmark_results.md

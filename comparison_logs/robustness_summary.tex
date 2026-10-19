@@ -1,0 +1,13 @@
+\begin{tabular}{lrrrr}
+\toprule
+metric & mean & std & minimum & maximum \\
+\midrule
+PennyLane QDPG multi-seed sharpe & 2.7755 & 1.4995 & 0.7365 & 5.0023 \\
+Classical DDPG multi-seed sharpe & 3.1987 & 0.4238 & 2.0612 & 3.5278 \\
+Placebo (shuffled) sharpe & 2.2092 & 0.5929 & 1.6112 & 2.7968 \\
+Untrained actor sharpe & 2.8310 & 1.3546 & -0.3700 & 5.6659 \\
+Equal Weight walk-forward sharpe (10 folds) & 0.4536 & 3.3578 & -4.5634 & 4.1599 \\
+PennyLane QDPG walk-forward sharpe (10 folds) & 0.1334 & 2.0740 & -2.4772 & 4.2976 \\
+Classical DDPG walk-forward sharpe (10 folds) & 0.8683 & 3.2187 & -4.5621 & 4.3296 \\
+\bottomrule
+\end{tabular}

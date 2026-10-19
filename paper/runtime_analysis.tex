@@ -1,0 +1,58 @@
+% Runtime analysis — Overleaf-ready fragment.
+% Drop into the Results/Runtime section with \input{runtime_analysis.tex}.
+% Requires: \usepackage{booktabs}  (and siunitx is optional).
+% This SUPPLEMENTS the runtime bar chart (benchmark1_runtime_bar.png); it
+% does not replace it. The table adds the measurement-uncertainty detail
+% the single-bar figure cannot show.
+
+\begin{table}[t]
+  \centering
+  \caption{Benchmark~1 wall-clock runtime (train~+~evaluate, seconds).
+    The ``single run'' column is the one measurement plotted in the
+    runtime bar chart. For the two models re-run across 10 random seeds
+    in the robustness suite, we also report the mean, sample standard
+    deviation (ddof${=}1$), observed range, and per-epoch cost; the
+    remaining six models were measured once ($n{=}1$) and carry no
+    uncertainty estimate.}
+  \label{tab:runtime}
+  \begin{tabular}{llrrrr}
+    \toprule
+    Model & Framework & Single run (s) & Mean$\pm$SD (s), $n{=}10$ & Range (s) & Per-epoch (s) \\
+    \midrule
+    Equal Weight                  & Classical & 0.00    & --              & --            & -- \\
+    Mean Variance Optimization    & Classical & 0.50    & --              & --            & -- \\
+    Classical DDPG                & PyTorch   & 3.60    & $0.23\pm0.07$   & 0.11--0.28    & 0.011 \\
+    Classical Deep Q-Learning     & PyTorch   & 0.10    & --              & --            & -- \\
+    PennyLane QDPG                & PennyLane & 9.10    & $17.79\pm9.73$  & 6.34--37.70   & 0.852 \\
+    PennyLane Quantum Q-Learning  & PennyLane & 32.60   & --              & --            & -- \\
+    Qiskit QDPG                   & Qiskit    & 883.70  & --              & --            & -- \\
+    Qiskit Quantum Q-Learning     & Qiskit    & 2347.00 & --              & --            & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Runtime measurement caveat.}
+The runtimes in Table~\ref{tab:runtime} and in the accompanying bar chart
+are single wall-clock measurements taken on a shared, non-isolated
+machine, and should be read as order-of-magnitude estimates rather than
+precise figures. Three sources of uncertainty dominate. First, the
+values bundle a per-epoch cost with the number of epochs actually run,
+and early stopping halts different runs at different epochs (between 6
+and 25 for the reinforcement-learning models), so a lower runtime can
+reflect earlier convergence rather than faster computation; normalizing
+to per-epoch cost removes this confound. Second, wall-clock time on a
+loaded machine varies with background contention. Third, sub-second
+measurements are dominated by one-time warm-up costs such as the first
+construction of the autograd graph. The magnitude of these effects is
+visible in the two models we re-ran across ten seeds: the single-run
+figure for PennyLane~QDPG (9.10\,s) underestimates the ten-seed mean
+(17.79\,s) by roughly a factor of two, whereas the single-run figure for
+Classical~DDPG (3.60\,s) overestimates its ten-seed mean (0.23\,s) by
+roughly a factor of fifteen, the latter attributable to cold-start
+overhead absorbed by the first measured run. We therefore claim only the
+order-of-magnitude structure of the results---classical
+$\ll$ PennyLane $\ll$ Qiskit, spanning two to three orders of
+magnitude---which is far larger than the measurement scatter and is
+robust to all three effects above. A controlled re-timing (repeated runs
+with a fixed epoch budget on an isolated machine) is left to future work
+and would be required before any finer-grained runtime claim.

@@ -1,0 +1,9 @@
+model,single_run_s,n_seeds,mean_s,std_s,min_s,max_s,per_epoch_s
+Equal Weight,0.0,1,,,,,
+Mean Variance Optimization,0.5,1,,,,,
+Classical DDPG,3.6,10,0.23,0.07,0.11,0.28,0.011
+Classical Deep Q-Learning,0.1,1,,,,,
+PennyLane QDPG,9.1,10,17.79,9.73,6.34,37.7,0.852
+PennyLane Quantum Q-Learning,32.6,1,,,,,
+Qiskit QDPG,883.7,1,,,,,
+Qiskit Quantum Q-Learning,2347.0,1,,,,,

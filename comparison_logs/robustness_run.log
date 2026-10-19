@@ -1,0 +1,59 @@
+
+=== A. Multi-seed (10 seeds) ===
+PennyLane QDPG seed 68: sharpe 0.840 profit 25.9% (25 ep)
+PennyLane QDPG seed 1: sharpe 5.002 profit 300.7% (9 ep)
+PennyLane QDPG seed 2: sharpe 2.365 profit 73.4% (25 ep)
+PennyLane QDPG seed 3: sharpe 4.019 profit 125.4% (25 ep)
+PennyLane QDPG seed 4: sharpe 3.756 profit 314.2% (6 ep)
+PennyLane QDPG seed 5: sharpe 3.346 profit 123.4% (25 ep)
+PennyLane QDPG seed 6: sharpe 3.195 profit 104.6% (25 ep)
+PennyLane QDPG seed 7: sharpe 3.597 profit 148.7% (25 ep)
+PennyLane QDPG seed 8: sharpe 0.899 profit 36.6% (25 ep)
+PennyLane QDPG seed 9: sharpe 0.737 profit 24.4% (25 ep)
+Classical DDPG seed 68: sharpe 3.151 profit 44.1% (25 ep)
+Classical DDPG seed 1: sharpe 2.061 profit 29.1% (25 ep)
+Classical DDPG seed 2: sharpe 3.055 profit 41.9% (13 ep)
+Classical DDPG seed 3: sharpe 3.391 profit 52.4% (25 ep)
+Classical DDPG seed 4: sharpe 3.528 profit 89.1% (11 ep)
+Classical DDPG seed 5: sharpe 3.422 profit 64.9% (13 ep)
+Classical DDPG seed 6: sharpe 3.398 profit 52.9% (25 ep)
+Classical DDPG seed 7: sharpe 3.227 profit 50.1% (25 ep)
+Classical DDPG seed 8: sharpe 3.369 profit 51.7% (25 ep)
+Classical DDPG seed 9: sharpe 3.386 profit 52.7% (25 ep)
+Equal Weight (deterministic): sharpe 3.384
+
+=== B. Placebo (time-shuffled train/val) ===
+placebo seed 68: sharpe 1.611 profit 33.8%
+placebo seed 1: sharpe 2.797 profit 116.9%
+placebo seed 2: sharpe 2.220 profit 68.0%
+
+=== C. Random-policy null (2000 draws) ===
+random-policy sharpe p5: 1.120
+random-policy sharpe p25: 2.221
+random-policy sharpe p50: 3.041
+random-policy sharpe p75: 3.715
+random-policy sharpe p95: 4.557
+
+=== D. Untrained quantum actors (20 inits) ===
+untrained sharpe: mean 2.831 std 1.320 range [-0.370, 5.666]
+
+=== E. Walk-forward folds (10 x 240 rows) ===
+fold 0 (2016-11-16..2017-01-26): Equal=3.57  PennyLane=-1.34  Classical=nan
+fold 1 (2017-10-31..2018-01-09): Equal=2.64  PennyLane=4.30  Classical=2.92
+fold 2 (2018-10-15..2018-12-21): Equal=-4.56  PennyLane=-2.23  Classical=-4.56
+fold 3 (2019-09-30..2019-12-05): Equal=4.16  PennyLane=1.62  Classical=4.33
+fold 4 (2020-09-11..2020-11-17): Equal=1.75  PennyLane=0.29  Classical=1.55
+fold 5 (2021-08-25..2021-11-01): Equal=0.29  PennyLane=-0.01  Classical=nan
+fold 6 (2022-08-09..2022-10-14): Equal=-3.52  PennyLane=-2.48  Classical=nan
+fold 7 (2023-07-25..2023-09-29): Equal=-4.20  PennyLane=-1.24  Classical=-2.41
+fold 8 (2024-07-09..2024-09-13): Equal=1.02  PennyLane=1.59  Classical=1.10
+fold 9 (2025-06-24..2025-08-29): Equal=3.38  PennyLane=0.84  Classical=3.15
+
+                                          metric      mean       std   minimum   maximum
+0               PennyLane QDPG multi-seed sharpe  2.775545  1.499450  0.736538  5.002302
+1               Classical DDPG multi-seed sharpe  3.198728  0.423788  2.061237  3.527822
+2                      Placebo (shuffled) sharpe  2.209203  0.592882  1.611187  2.796815
+3                         Untrained actor sharpe  2.831046  1.354632 -0.370048  5.665854
+4    Equal Weight walk-forward sharpe (10 folds)  0.453555  3.357775 -4.563360  4.159929
+5  PennyLane QDPG walk-forward sharpe (10 folds)  0.133428  2.073950 -2.477173  4.297554
+6  Classical DDPG walk-forward sharpe (10 folds)  0.868326  3.218737 -4.562069  4.329595

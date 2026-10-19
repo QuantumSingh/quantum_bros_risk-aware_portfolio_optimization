@@ -1,0 +1,24 @@
+<svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" role="img" font-family="'Anthropic Sans', system-ui, sans-serif">
+<title>Elevator pitch: quantum AI that trades like insurance</title>
+<desc>A stylized chart of the 2020 market crash. A grey market line dives deep below zero while a blue Quantum RL line dips shallowly and recovers above zero. Three chips summarize: up through the crash, half the crash losses, validated to ten to the minus seven.</desc>
+<rect x="0" y="0" width="680" height="470" fill="#ffffff"/>
+<text x="340" y="50" text-anchor="middle" font-size="33" font-weight="700" fill="#111418">Quantum AI that trades like insurance</text>
+<text x="340" y="84" text-anchor="middle" font-size="16.5" fill="#5b6270">It gives up some calm-market gains to stay standing when markets crash.</text>
+<rect x="48" y="104" width="584" height="250" rx="14" fill="none" stroke="#e4e6ea" stroke-width="1.5"/>
+<line x1="80" y1="250" x2="610" y2="250" stroke="#cfd2d8" stroke-width="1.5" stroke-dasharray="5 5"/>
+<text x="72" y="254" text-anchor="end" font-size="13" fill="#9aa0a6">0%</text>
+<path d="M 320 250 L 430 238 L 520 214 L 600 193 L 600 250 Z" fill="#3b6ef5" fill-opacity="0.13"/>
+<polyline points="90,175 150,205 230,252 320,298 430,320 520,330 600,328" fill="none" stroke="#8a8f98" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="90,175 150,195 230,238 320,250 430,238 520,214 600,193" fill="none" stroke="#3b6ef5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="455" y="150" text-anchor="middle" font-size="15" font-weight="600" fill="#3b6ef5">Quantum RL</text>
+<text x="415" y="348" text-anchor="middle" font-size="14" font-weight="600" fill="#8a8f98">The market</text>
+<text x="345" y="376" text-anchor="middle" font-size="13" fill="#9aa0a6">Time  &#8594;  through the 2020 market crash</text>
+<g font-size="14" font-weight="600" fill="#111418" text-anchor="middle">
+<rect x="60" y="396" width="176" height="46" rx="11" fill="none" stroke="#d7dae0" stroke-width="1.5"/>
+<text x="148" y="424">Up through the crash</text>
+<rect x="252" y="396" width="176" height="46" rx="11" fill="none" stroke="#d7dae0" stroke-width="1.5"/>
+<text x="340" y="424">&#189; the crash losses</text>
+<rect x="444" y="396" width="176" height="46" rx="11" fill="none" stroke="#d7dae0" stroke-width="1.5"/>
+<text x="532" y="424">Validated to 10&#8315;&#8311;</text>
+</g>
+</svg>
