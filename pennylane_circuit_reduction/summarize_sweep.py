@@ -149,27 +149,34 @@ def plot_performance(df, quantum):
 
 
 def plot_speed(quantum):
+    """Speed comes from the clean per-pass benchmark only: the full training
+    runs overlapped on one machine (and one ran through system sleep), so their
+    wall-clock times are not comparable across depths."""
     bench_path = RESULTS / "speed_benchmark.csv"
+    if not bench_path.exists():
+        return
+    bench = pd.read_csv(bench_path)
     fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.6))
-    if bench_path.exists():
-        bench = pd.read_csv(bench_path)
-        for role, color in [("actor", "#2b6cb0"), ("critic", "#2f855a")]:
-            sub = bench[bench["role"] == role]
-            axes[0].plot(sub["num_weights"], sub["forward_backward_ms"], "o-", color=color,
-                         lw=2, ms=7, label=f"{role} ({int(sub['qubits'].iloc[0])} qubits)")
-        axes[0].set_ylabel("ms per forward + backward pass")
-        axes[0].set_title("One circuit evaluation (clean benchmark)")
-        axes[0].legend()
-    sub = quantum[quantum["model"] == "QDPG"]
-    if not sub.empty:
-        axes[1].bar(sub["num_weights"].astype(str), sub["train_minutes"], color="#2b6cb0", width=0.55)
-        for x, (m, done) in enumerate(zip(sub["train_minutes"], sub["folds_done"])):
-            axes[1].text(x, m, f"{m:.0f} min\n({done} folds)", ha="center", va="bottom", fontsize=8.5)
-        axes[1].set_ylabel("Total training minutes")
-        axes[1].set_title("Full Quantum DDPG training (runs overlapped)")
+    for role, color in [("actor", "#2b6cb0"), ("critic", "#2f855a")]:
+        sub = bench[bench["role"] == role]
+        label = f"{role} ({int(sub['qubits'].iloc[0])} qubits)"
+        axes[0].plot(sub["num_weights"], sub["forward_backward_ms"], "o-", color=color,
+                     lw=2, ms=7, label=label)
+        axes[1].plot(sub["num_weights"], sub["speedup_vs_60w"], "o-", color=color,
+                     lw=2, ms=7, label=label)
+    for x, s in zip(bench[bench["role"] == "actor"]["num_weights"],
+                    bench[bench["role"] == "actor"]["speedup_vs_60w"]):
+        axes[1].annotate(f"{s:.1f}×", (x, s), textcoords="offset points", xytext=(0, 8),
+                         ha="center", fontsize=9)
+    axes[0].set_ylabel("ms per forward + backward pass")
+    axes[0].set_title("Time for one circuit evaluation")
+    axes[1].set_ylabel("Speed-up vs the released 60-weight circuit")
+    axes[1].set_title("How much faster each smaller circuit runs")
     for ax in axes:
         ax.set_xlabel("Trainable weights")
-    fig.suptitle("Speed vs circuit depth")
+        ax.set_xticks([15, 30, 45, 60])
+        ax.legend()
+    fig.suptitle("Speed vs circuit depth (clean single-process benchmark)")
     fig.tight_layout()
     fig.savefig(PLOTS / "speed_vs_depth.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
@@ -193,6 +200,7 @@ def plot_losses(runs):
                             color=colors.get(n_w, "gray"), alpha=0.08)
     axes[0].set_title("Actor loss (lower = critic rates the policy higher)")
     axes[1].set_title("Critic loss (prediction error, lower = better fit)")
+    axes[1].set_yscale("log")  # a few huge spikes would otherwise flatten every curve
     for ax in axes:
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Loss, mean over folds")
@@ -239,10 +247,12 @@ def plot_confusions(df):
     for _, r in df.iterrows():
         fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
         cm = np.array([[r["TP"], r["FN"]], [r["FP"], r["TN"]]])
-        axes[0].imshow(cm, cmap="Blues")
+        im = axes[0].imshow(cm, cmap="Blues", vmin=0, vmax=cm.max())
         for (i, j), v in np.ndenumerate(cm):
+            red, green, blue, _ = im.cmap(im.norm(v))
+            dark_cell = 0.299 * red + 0.587 * green + 0.114 * blue < 0.5
             axes[0].text(j, i, f"{v}\n{v / cm.sum():.0%}", ha="center", va="center",
-                         color="white" if v > cm.max() * 0.6 else "black", fontsize=11)
+                         color="white" if dark_cell else "black", fontsize=11)
         axes[0].set_xticks([0, 1], ["model: overweight", "model: underweight"])
         axes[0].set_yticks([0, 1], ["actual: beat avg", "actual: lagged"])
         axes[0].set_title("Confusion matrix (all rebalances, all assets)")
@@ -279,6 +289,9 @@ def write_markdown(df):
                   f"{fmt(r['dpo_profit'] * 100, 2)}% | {fmt(r['paper_sharpe'])} | {r['train_minutes']:.0f} |")
     md += ["", "Released `MAIN.py` at 60 weights (pennylane_reproduction/): "
            f"QDPG DPO Sharpe {RELEASED_60W['QDPG']}, QQL {RELEASED_60W['QQL']}.", "",
+           "*Train min* is wall-clock time with several runs sharing one machine (and the",
+           "45-weight folds 6–7 ran through system sleep), so it is not a fair speed comparison.",
+           "Use `speed_benchmark.csv` / `plots/speed_vs_depth.png` for speed.", "",
            "## Picking winners (confusion matrix)", "",
            "At each 30-day rebalance, *overweight* (weight above 1/15) counts as predicting the",
            "asset beats the 15-asset average over the next 30 days.", "",

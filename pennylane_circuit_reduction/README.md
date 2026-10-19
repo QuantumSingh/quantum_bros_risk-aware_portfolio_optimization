@@ -45,6 +45,53 @@ encoding step dominates: it decomposes into roughly 2^15 CNOTs, which dwarfs
 the 42 CNOTs in the trainable part. Shrinking the trainable layers therefore
 speeds up *simulation* far more than it would shorten a hardware circuit.
 
+## Findings (Quantum DDPG, all 7 folds, seed 68)
+
+Full tables: [`results/sweep_summary.md`](results/sweep_summary.md). Plots: `results/plots/`.
+
+**1. The setup is exact.** At 60 weights the sweep reproduces the authors'
+`MAIN.py` on all 16 reported statistics (mean, IQR, min and max of static and
+rebalanced profit and Sharpe). The classical DDPG also matches exactly.
+
+**2. Removing layers did not hurt. The released circuit was the worst.**
+
+| Weights (actor layers) | Rebalanced Sharpe (DPO) | Static Sharpe (SPO) | Speed per pass |
+|---|---|---|---|
+| 15 (1) | **0.50** | 0.14 | 3.8× faster |
+| 30 (2, half) | 0.16 | **0.62** | 2.0× faster |
+| 45 (3) | 0.44 | 0.51 | 1.3× faster |
+| 60 (4, released) | −0.40 | 0.10 | 1× |
+| Classical DDPG | 0.55 | 0.55 | — |
+| Paper, 30 / 60 weights | 0.42 / 0.73 | — | — |
+
+Every smaller circuit beats the released one on both measures. The ranking
+among the smaller circuits flips between the two measures, so one seed cannot
+pick a winner among them (`plots/performance_vs_depth.png`).
+
+**3. Why: deeper circuits barely train.** In `plots/loss_curves.png`, the 15-
+and 30-weight actor losses change a lot over training. The 45- and 60-weight
+losses stay flat near zero for all 50 epochs. `inspect_trainability.py`
+measures the cause before training: as layers are added, the circuits' outputs
+crowd toward zero and their gradients shrink. The critic's gradient variance is
+8× smaller at 60 weights than at 15. This is the "barren plateau" effect. The
+actor learns through the critic's gradients, so a flat critic leaves the actor
+with almost no learning signal (`plots/trainability_vs_depth.png`).
+
+**4. Little skill at picking winners.** Accuracy is 49–54% at every depth,
+against 50% chance (classical DDPG: 51%). Recall falls as depth grows
+(0.47 → 0.41 → 0.40 → 0.38), and the released circuit is slightly *below*
+chance (0.49). Whatever edge the models have comes from managing risk, not
+from choosing which assets will outperform
+(`plots/classification_vs_depth.png`, `plots/confusion_<run>.png`).
+
+**Caveats:** one random seed per depth; single test periods swing widely.
+Full-run training times were measured with runs sharing the machine (one ran
+through system sleep), so speed comes from the clean benchmark.
+
+**Next steps to discuss:** repeat with several seeds; run the same depth
+sweep for Quantum Q-Learning; combine the smaller circuit with the paper's
+training settings (early stopping, soft updates); then try other optimizers.
+
 ## The experiment
 
 `run_depth_sweep.py` reproduces the authors' `MAIN.py` exactly: 3,536 days of
@@ -91,6 +138,7 @@ next 30 days?*
 | Path | What it is |
 |---|---|
 | `inspect_circuit.py` | Draws the circuit at each depth, counts gates, times one forward and backward pass. |
+| `inspect_trainability.py` | Measures output strength and gradient size at each depth over 20 random initializations (barren-plateau check). |
 | `run_depth_sweep.py` | Trains and evaluates one model at one depth, fold by fold. |
 | `summarize_sweep.py` | Builds all tables and plots from finished runs. |
 | `results/circuits/` | Circuit diagrams (text and PNG) at each depth. |
@@ -104,6 +152,7 @@ next 30 days?*
 ```bash
 PY=original_pennylane/qrl-dpo-public/.venv/bin/python
 $PY pennylane_circuit_reduction/inspect_circuit.py                              # diagrams, gate counts, timing (~2 min)
+$PY pennylane_circuit_reduction/inspect_trainability.py                         # gradient size per depth (~3 min)
 $PY -u pennylane_circuit_reduction/run_depth_sweep.py --model QDPG --num-weights 30
 $PY -u pennylane_circuit_reduction/run_depth_sweep.py --model QDPG --num-weights 30 --folds 6 7
 $PY pennylane_circuit_reduction/summarize_sweep.py                              # tables and plots
