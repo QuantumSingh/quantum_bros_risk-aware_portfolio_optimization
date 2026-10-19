@@ -167,22 +167,3 @@ takes about 2.5 times as long.
 The 45- and 60-weight runs and all Quantum Q-Learning runs take hours, so the
 cluster is the right place for them. Never put your password in a script or
 commit it.
-
-1. Log in with your own terpmail username: `ssh -XY <username>@hepcms-henrietta.umd.edu`
-2. Change the initial password right away (your PI's `ldappasswd` command).
-3. Get the code:
-   `git clone https://github.com/QuantumSingh/quantum_bros_risk-aware_portfolio_optimization.git`,
-   then `cd` into it and `git checkout qiskit-port` (or `main` after the PR is merged).
-4. Make a Python environment: check `python3 --version` (the code targets
-   3.12; ask your PI which module provides it if needed), then
-   `python3 -m venv venv && source venv/bin/activate && pip install -r original_pennylane/qrl-dpo-public/requirements_fixed.txt`.
-   The data file `original_pennylane/qrl-dpo-public/data/price_data.parquet.gzip`
-   is ignored by git, so copy it up from your Mac with
-   `scp original_pennylane/qrl-dpo-public/data/price_data.parquet.gzip <username>@hepcms-henrietta.umd.edu:<repo path>/original_pennylane/qrl-dpo-public/data/`.
-5. Start a run that survives logging out:
-   `nohup python -u pennylane_circuit_reduction/run_depth_sweep.py --model QDPG --num-weights 60 > qdpg60.log 2>&1 &`
-   Folds are independent, so separate folds (`--folds 1`, `--folds 2`, ...)
-   can run at the same time. If the cluster has a batch system (HEP clusters
-   often use HTCondor), ask your PI how to submit jobs instead.
-6. Bring results back by copying `pennylane_circuit_reduction/results/runs/`
-   to your Mac (`scp -r`) or committing them, then run `summarize_sweep.py`.
