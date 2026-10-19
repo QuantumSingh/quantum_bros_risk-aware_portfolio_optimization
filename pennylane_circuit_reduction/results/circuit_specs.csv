@@ -1,0 +1,9 @@
+role,num_weights,qubits,rotation_layers,RY_gates,CNOT_gates,trainable_part_depth,total_ops_simulated
+actor,15,15,1.0,15,0,1,16
+actor,30,15,2.0,30,14,16,45
+actor,45,15,3.0,45,28,19,74
+actor,60,15,4.0,60,42,22,103
+critic,15,12,1.25,15,11,13,27
+critic,30,12,2.5,30,22,16,53
+critic,45,12,3.75,45,33,19,79
+critic,60,12,5.0,60,44,22,105
