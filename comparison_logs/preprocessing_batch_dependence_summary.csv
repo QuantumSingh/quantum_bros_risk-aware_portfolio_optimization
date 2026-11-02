@@ -1,0 +1,2 @@
+data,input_type,assets,lookback,batch_size,transformed_feature_count,shape_check_passed,multi_sample_batches_finite,same_batch_repeatable,anchor_max_absolute_difference,anchor_mean_absolute_difference,anchor_batch_dependent,singleton_batch_finite
+C:\Users\griff\Documents\quantum_bros_risk-aware_portfolio_optimization\data\custom_portfolios\custom_nonpaper_10_prices.parquet.gzip,prices,4,10,4,160,True,True,True,2.660325050354004,0.5483195185661316,True,False

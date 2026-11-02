@@ -1331,6 +1331,16 @@ PYTHONPATH=. $PY -u qiskit_port/compare_initial_qnn_weights.py
 PYTHONPATH=. $PY -u qiskit_port/diagnose_gradient_scaling.py
 # Writes comparison_logs/gradient_scaling_diagnostic.csv and
 # comparison_logs/plots/gradient_scaling_diagnostic.png
+
+# Validate autograd weight gradients against central finite differences
+PYTHONPATH=. $PY -u qiskit_port/diagnose_weight_gradient_check.py
+# Writes comparison_logs/weight_gradient_check_{details,summary}.csv and
+# comparison_logs/plots/weight_gradient_check_{scatter,error}.png
+
+# Check whether radial_to_linear changes a fixed window across batch contexts
+PYTHONPATH=. $PY -u qiskit_port/diagnose_preprocessing_batch_dependence.py
+# Writes per-feature and summary CSVs plus a plot in comparison_logs/plots/
+
 # Optional: use the authors' daily-return file if available locally
 PYTHONPATH=. $PY -u qiskit_port/diagnose_gradient_scaling.py \
   --data original_pennylane/qrl-dpo-public/data/price_data.parquet.gzip \
