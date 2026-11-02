@@ -1327,6 +1327,15 @@ PYTHONPATH=. $PY -u qiskit_port/compare_pennylane_qiskit_forward.py
 PYTHONPATH=. $PY -u qiskit_port/compare_pennylane_qiskit_gradients.py
 PYTHONPATH=. $PY -u qiskit_port/compare_initial_qnn_weights.py
 
+# Gradient-scaling diagnostic (custom data by default; no policy training)
+PYTHONPATH=. $PY -u qiskit_port/diagnose_gradient_scaling.py
+# Writes comparison_logs/gradient_scaling_diagnostic.csv and
+# comparison_logs/plots/gradient_scaling_diagnostic.png
+# Optional: use the authors' daily-return file if available locally
+PYTHONPATH=. $PY -u qiskit_port/diagnose_gradient_scaling.py \
+  --data original_pennylane/qrl-dpo-public/data/price_data.parquet.gzip \
+  --input-type returns
+
 # Dataset (network required)
 $PY -u qiskit_port/download_custom_nonpaper_10_data.py
 
